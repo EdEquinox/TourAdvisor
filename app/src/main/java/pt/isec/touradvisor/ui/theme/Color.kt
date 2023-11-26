@@ -1,4 +1,4 @@
-package pt.isec.touradviser.ui.theme
+package pt.isec.touradvisor.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

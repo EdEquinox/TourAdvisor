@@ -1,4 +1,4 @@
-package pt.isec.touradviser
+package pt.isec.touradvisor
 
 import org.junit.Test
 
