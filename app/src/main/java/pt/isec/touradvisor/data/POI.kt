@@ -17,5 +17,6 @@ data class POI(
     val price: String,
     val duration: String,
     val distance: String,
-    val isFavorite: Boolean
+    val isFavorite: Boolean,
+    val isVisited: Boolean
 ) 
