@@ -30,6 +30,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import pt.isec.touradvisor.TourAdviserApp
 import pt.isec.touradvisor.ui.screens.HomeScreen
+import pt.isec.touradvisor.ui.screens.LandingScreen
+import pt.isec.touradvisor.ui.screens.MainScreen
 import pt.isec.touradvisor.ui.theme.TourAdvisorTheme
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModelFactory
@@ -45,14 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TourAdvisorTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    HomeScreen(viewModel = viewModel)
-                }
+                MainScreen(viewModel = viewModel)
             }
         }
         verifyPermissions()
@@ -145,5 +140,5 @@ class MainActivity : ComponentActivity() {
         viewModel.backgroundLocationPermission = result
         Toast.makeText(this,"Background location enabled: $result", Toast.LENGTH_LONG).show()
     }
-
 }
+
