@@ -122,9 +122,7 @@ fun HomeScreen(
             .height(20.dp)
             .align(Alignment.CenterHorizontally)) {
             Tab(selected = true, onClick = {
-                if (navController != null) {
-                    navController.navigate(Screens.PROFILE.route)
-                }
+                navController?.navigate(Screens.PROFILE.route)
             }) {
                 Text(text = "POIs")
             }
