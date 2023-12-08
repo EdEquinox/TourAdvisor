@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "891385969712",
+    "project_id": "touradvisor2324",
+    "storage_bucket": "touradvisor2324.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:891385969712:android:3a837e55f8d62b887dc1f5",
+        "android_client_info": {
+          "package_name": "pt.isec.touradviser"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "891385969712-fiksgtobqoujmsv0dmkqtim2q99oirn6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "pt.isec.touradvisor",
+            "certificate_hash": "0d6ed5f3aa7a8441584e4c3f3c88c5afb28762bd"
+          }
+        },
+        {
+          "client_id": "891385969712-kark75q1lhgotso4cn68p15gdei05v2t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0VWLEXZTTH-giPQ_6i9VzUG8reMkCFxA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "891385969712-kark75q1lhgotso4cn68p15gdei05v2t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

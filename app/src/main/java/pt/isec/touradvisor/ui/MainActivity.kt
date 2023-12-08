@@ -3,7 +3,6 @@ package pt.isec.touradvisor.ui
 import android.Manifest
 import android.app.AlertDialog
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -11,43 +10,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LiveData
 import pt.isec.touradvisor.TourAdviserApp
-import pt.isec.touradvisor.ui.screens.HomeScreen
-import pt.isec.touradvisor.ui.screens.LandingScreen
 import pt.isec.touradvisor.ui.screens.MainScreen
 import pt.isec.touradvisor.ui.theme.TourAdvisorTheme
+import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModelFactory
-import pt.isec.touradvisor.utils.location.LocationHandler
 
 class MainActivity : ComponentActivity() {
 
     private val app by lazy { application as TourAdviserApp }
-    private val viewModel: LocationViewModel by viewModels {
+    private val locationViewModel: LocationViewModel by viewModels {
         LocationViewModelFactory(app.locationHandler)
     }
+    private val firebaseViewModel: FirebaseViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             TourAdvisorTheme {
-                MainScreen(viewModel = viewModel)
+                MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel)
             }
         }
         verifyPermissions()
@@ -55,34 +38,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.startLocationUpdates()
+        locationViewModel.startLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
-        viewModel.stopLocationUpdates()
+        locationViewModel.stopLocationUpdates()
     }
 
     private fun verifyPermissions() : Boolean{
-        viewModel.coarseLocationPermission = ContextCompat.checkSelfPermission(
+        locationViewModel.coarseLocationPermission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        viewModel.fineLocationPermission = ContextCompat.checkSelfPermission(
+        locationViewModel.fineLocationPermission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            viewModel.backgroundLocationPermission = ContextCompat.checkSelfPermission(
+            locationViewModel.backgroundLocationPermission = ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         } else
-            viewModel.backgroundLocationPermission = viewModel.coarseLocationPermission || viewModel.fineLocationPermission
+            locationViewModel.backgroundLocationPermission = locationViewModel.coarseLocationPermission || locationViewModel.fineLocationPermission
 
-        if (!viewModel.coarseLocationPermission && !viewModel.fineLocationPermission) {
+        if (!locationViewModel.coarseLocationPermission && !locationViewModel.fineLocationPermission) {
             basicPermissionsAuthorization.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -98,17 +81,17 @@ class MainActivity : ComponentActivity() {
     private val basicPermissionsAuthorization = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        viewModel.coarseLocationPermission = results[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        viewModel.fineLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        viewModel.startLocationUpdates()
+        locationViewModel.coarseLocationPermission = results[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        locationViewModel.fineLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        locationViewModel.startLocationUpdates()
         verifyBackgroundPermission()
     }
 
     private fun verifyBackgroundPermission() {
-        if (!(viewModel.coarseLocationPermission || viewModel.fineLocationPermission))
+        if (!(locationViewModel.coarseLocationPermission || locationViewModel.fineLocationPermission))
             return
 
-        if (!viewModel.backgroundLocationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (!locationViewModel.backgroundLocationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(
                     this, Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 )
@@ -137,7 +120,7 @@ class MainActivity : ComponentActivity() {
     private val backgroundPermissionAuthorization = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { result ->
-        viewModel.backgroundLocationPermission = result
+        locationViewModel.backgroundLocationPermission = result
         Toast.makeText(this,"Background location enabled: $result", Toast.LENGTH_LONG).show()
     }
 }

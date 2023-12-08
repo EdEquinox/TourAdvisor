@@ -1,10 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -14,21 +10,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import pt.isec.touradviser.R
+import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainScreen(navController: NavHostController = rememberNavController(), viewModel: LocationViewModel) {
+fun MainScreen(
+    navController: NavHostController = rememberNavController(),
+    locationViewModel: LocationViewModel,
+    firebaseViewModel: FirebaseViewModel
+) {
 
     var showAddAction by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -53,10 +49,17 @@ fun MainScreen(navController: NavHostController = rememberNavController(), viewM
                 LandingScreen(navController = navController)
             }
             composable(Screens.HOME.route) {
-                HomeScreen(navController = navController ,viewModel = viewModel)
+                HomeScreen(navController = navController ,locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel) {
+                    navController.navigate(
+                        Screens.LOGIN.route
+                    )
+                }
             }
             composable(Screens.PROFILE.route) {
                 ProfileScreen( navController = navController)
+            }
+            composable(Screens.LOGIN.route) {
+                LoginScreen(navController = navController, viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
             }
         }
 

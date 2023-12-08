@@ -52,7 +52,7 @@ fun LandingScreen(
 
     LaunchedEffect(key1 = true) {
         delay(1500L) // delay for 2 seconds
-        navController.navigate(Screens.HOME.route) // replace with your next screen route
+        navController.navigate(Screens.LOGIN.route) // replace with your next screen route
     }
 
 }
