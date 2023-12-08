@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import org.osmdroid.config.Configuration
 import pt.isec.touradvisor.TourAdviserApp
 import pt.isec.touradvisor.ui.screens.MainScreen
 import pt.isec.touradvisor.ui.theme.TourAdvisorTheme
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Configuration.getInstance().load(this, getSharedPreferences("OSM", MODE_PRIVATE))
         setContent {
             TourAdvisorTheme {
                 MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel)

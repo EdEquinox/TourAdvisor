@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -35,6 +37,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import pt.isec.touradviser.R
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 
@@ -54,6 +57,7 @@ fun HomeScreen(
         mutableStateOf(location?.let { GeoPoint(it.latitude, it.longitude) })
     }
     val user by remember { firebaseViewModel.user }
+    var mapCenter by remember { mutableStateOf(geoPoint) }
 
     if (autoEnabled) {
         geoPoint = location?.let { GeoPoint(it.latitude, it.longitude) }
@@ -71,18 +75,18 @@ fun HomeScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-//        Row(modifier = Modifier
-//            .height(100.dp)
-//            .height(100.dp),
-//            verticalAlignment = Alignment.CenterVertically,
-//            horizontalArrangement = Arrangement.SpaceBetween)
-//        {
-//            Text(text = "Latitude: ${location?.latitude?:"--"}")
-//            Switch(checked = autoEnabled, onCheckedChange = {
-//                autoEnabled = it
-//            })
-//            Text(text = "Longitude: ${location?.longitude ?:"--"}")
-//        }
+        Row(modifier = Modifier
+            .height(100.dp)
+            .height(100.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween)
+        {
+            Text(text = "Latitude: ${location?.latitude?:"--"}")
+            Switch(checked = autoEnabled, onCheckedChange = {
+                autoEnabled = it
+            })
+            Text(text = "Longitude: ${location?.longitude ?:"--"}")
+        }
 
         Box(modifier = Modifier
             .fillMaxWidth()
@@ -98,7 +102,9 @@ fun HomeScreen(
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(false)
                     controller.setZoom(18.0)
-                    controller.setCenter(geoPoint)
+                    mapCenter?.let {
+                        controller.setCenter(it)
+                    }
                     for (poi in locationViewModel.POIs) {
                         overlays.add(
                             Marker(this).apply {
@@ -145,6 +151,7 @@ fun HomeScreen(
                     ),
                     onClick = {
                         geoPoint = GeoPoint(it.latitude, it.longitude)
+                        mapCenter = geoPoint
                     }
                 ) {
                     Column(
