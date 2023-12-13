@@ -31,7 +31,7 @@ fun MainScreen(
 
     navController.addOnDestinationChangedListener() { controller, destination, arguments ->
         showAddAction = (destination.route in
-                arrayOf(Screens.HOME.route, Screens.POI.route, Screens.FAVORITES.route, Screens.VISITED.route, Screens.SETTINGS.route))
+                arrayOf(Screens.HOME.route, Screens.SETTINGS.route))
     }
 
     Scaffold(
@@ -59,7 +59,10 @@ fun MainScreen(
                 ProfileScreen( navController = navController)
             }
             composable(Screens.LOGIN.route) {
-                LoginScreen(navController = navController, viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
+                LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
+            }
+            composable(Screens.SETTINGS.route) {
+                SettingScreen(navController = navController)
             }
         }
 
