@@ -61,6 +61,19 @@ class LocationViewModel(
         Coordinates("Real Madrid",40.45306,-3.68835)
     )
 
+    val categories = listOf(
+        "Stadium",
+        "Museum",
+        "Restaurant",
+        "Hotel",
+        "Bar",
+        "Monument",
+        "Park",
+        "Church",
+        "Beach",
+        "Shopping"
+    )
+
 }
 
 data class Coordinates(val team: String,val latitude : Double, val longitude: Double)

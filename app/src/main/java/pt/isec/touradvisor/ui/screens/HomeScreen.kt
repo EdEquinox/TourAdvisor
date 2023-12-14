@@ -1,5 +1,7 @@
 package pt.isec.touradvisor.ui.screens
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,19 +12,26 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -38,11 +47,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -64,7 +75,7 @@ fun HomeScreen(
     onLogout: () -> Unit
 ) {
 
-    var autoEnabled by remember { mutableStateOf(false) }
+    var autoEnabled by remember { mutableStateOf(true) }
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
         mutableStateOf(location?.let { GeoPoint(it.latitude, it.longitude) })
@@ -93,28 +104,15 @@ fun HomeScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        /*Row(modifier = Modifier
-            .height(100.dp)
-            .height(100.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween)
-        {
-            Text(text = "Latitude: ${location?.latitude?:"--"}")
-            Switch(checked = autoEnabled, onCheckedChange = {
-                autoEnabled = it
-            })
-            Text(text = "Longitude: ${location?.longitude ?:"--"}")
-        }*/
-
         Box(modifier = Modifier
             .fillMaxWidth()
-            .height(450.dp)
+            .height(470.dp)
             .clipToBounds()
         ) {
-            SearchBar( query = query,
+            SearchBar(
+                query = query,
                 onQueryChange = { query = it },
-                onSearch = {
-                    active = false },
+                onSearch = { active = false },
                 active = active,
                 onActiveChange = { active = it },
                 placeholder = { Text(text = "Procurar") },
@@ -131,9 +129,10 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.AccountCircle, //TODO: Change to profile pic
                             contentDescription = "Profile Icon",
-                            modifier = Modifier.clickable {
-                                navController?.navigate(Screens.PROFILE.route)
-                            }
+                            modifier = Modifier
+                                .clickable {
+                                    navController?.navigate(Screens.PROFILE.route)
+                                }
                                 .size(40.dp))
                     }
                 },
@@ -153,11 +152,11 @@ fun HomeScreen(
                                 .height(30.dp)) {
                                 Icon(imageVector = Icons.Default.History, contentDescription = "History Icon",
                                     modifier = Modifier.padding(end = 8.dp))
-                                Text(text = it, fontSize = 20.sp, modifier = Modifier.
-                                clickable {
-                                    query = it
-                                    active = false
-                                }
+                                Text(text = it, fontSize = 20.sp, modifier = Modifier
+                                    .clickable {
+                                        query = it
+                                        active = false
+                                    }
                                     .align(Alignment.CenterVertically)
                                     .fillMaxWidth())
                             }
@@ -168,10 +167,11 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(8.dp)
                     )
-            AndroidView(factory = { context->
+            AndroidView(
+                factory = { context->
                 MapView(context).apply {
                     setTileSource(TileSourceFactory.MAPNIK)
-                    setMultiTouchControls(false)
+                    setMultiTouchControls(true)
                     controller.setZoom(18.0)
                     mapCenter?.let {
                         controller.setCenter(it)
@@ -189,23 +189,23 @@ fun HomeScreen(
                         )
                     }
                 }
-            })
+            }, modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(0f)
+            )
+            Row(
+                modifier
+                    .zIndex(1f)
+                    .align(Alignment.BottomCenter),
+            ){
+                AddButton( modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                )
         }
-        TabRow(selectedTabIndex = 0, modifier = Modifier
-            .fillMaxWidth()
-            .height(20.dp)
-            .align(Alignment.CenterHorizontally)) {
-            Tab(selected = true, onClick = {
-                navController?.navigate(Screens.PROFILE.route)
-            }) {
-                Text(text = "POIs")
-            }
-            Tab(selected = false, onClick = { firebaseViewModel.signOut() }) {
-                Text(text = "Restaurants")
-            }
-            Tab(selected = false, onClick = { /*TODO*/ }) {
-                Text(text = "Hotels")
-            }
+
+        }
+        TabFilter(LocationViewModel = locationViewModel){
+
         }
         LazyColumn(modifier = Modifier
             .fillMaxSize()
@@ -239,3 +239,76 @@ fun HomeScreen(
         }
     }
 }
+
+@Composable
+fun TabFilter(
+    LocationViewModel: LocationViewModel,
+    modifier: Modifier = Modifier,
+    onFilter: () -> Unit
+) {
+    LazyRow(modifier = modifier
+        .fillMaxWidth()
+        .height(50.dp)
+        .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+        items(LocationViewModel.categories) {
+            IconButton(onClick = { /* Handle click */ }){
+                Icon(imageVector = Icons.Default.Dialpad/*aqui é a imagem da categoria*/,
+                    contentDescription = "Filter Icon")
+            }
+        }
+
+    }
+}
+
+@Composable
+fun AddButton(
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier
+        .height(150.dp)
+        .width(180.dp)
+        .offset(y = (40).dp)) {
+        IconButton(
+            onClick = { isExpanded = !isExpanded },
+            modifier = Modifier
+                .align(Alignment.Center)
+                .background(Color(68, 138, 255, 255), CircleShape)) {
+            Icon(Icons.Default.Add, contentDescription = "Main button")
+        }
+
+        if (isExpanded) {
+
+            IconButton(onClick = { /* Handle click */ },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .clip(shape = CircleShape)
+                    .background(Color(60, 59, 59, 100), CircleShape)
+                    ) {
+                Icon(Icons.Default.Add, contentDescription = "Button 1")
+            }
+
+            IconButton(onClick = { /* Handle click */ },
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .clip(shape = CircleShape)
+                    .background(Color(60, 59, 59, 100), CircleShape)
+                    ) {
+                Icon(Icons.Default.Add, contentDescription = "Button 2")
+            }
+
+            IconButton(onClick = { /* Handle click */ },
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clip(shape = CircleShape)
+                    .background(Color(60, 59, 59, 100), CircleShape)
+                    ) {
+                Icon(Icons.Default.Add, contentDescription = "Button 3")
+            }
+        }
+    }
+}
+
