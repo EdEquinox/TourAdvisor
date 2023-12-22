@@ -88,8 +88,18 @@ fun HomeScreen(
     navController: NavController?,
     onLogout: () -> Unit
 ) {
-
     firebaseViewModel.startObserver();
+
+//    @Composable
+//    fun YourScreen() {
+//        val data = viewModel.data.collectAsState(initial = Loading)
+//
+//        when (val result = data.value) {
+//            is Loading -> CircularProgressIndicator() // Display a loading indicator
+//            is Success -> DisplayData(result.data) // Display the data
+//            is Error -> Text("Error: ${result.exception.message}") // Display an error message
+//        }
+//    }
 
     var autoEnabled by remember { mutableStateOf(true) }
     val location by locationViewModel.currentLocation.observeAsState()
@@ -105,8 +115,8 @@ fun HomeScreen(
     }
     var searchTrue: Boolean by remember { mutableStateOf(false) }
     val openDialog = remember { mutableStateOf(false) }
-    val pois = remember { firebaseViewModel.POIs }
-    val categories = remember { firebaseViewModel.categories }
+    val pois by remember { mutableStateOf(firebaseViewModel.POIs) }
+    val categories by remember { mutableStateOf(firebaseViewModel.categories) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
 
     if (autoEnabled) {
@@ -152,6 +162,7 @@ fun HomeScreen(
                             contentDescription = "Profile Icon",
                             modifier = Modifier
                                 .clickable {
+                                    firebaseViewModel.stopObserver()
                                     navController?.navigate(Screens.PROFILE.route)
                                 }
                                 .size(40.dp))
@@ -226,13 +237,13 @@ fun HomeScreen(
                     .align(Alignment.BottomCenter),
             ){
                 AddButton( modifier = Modifier
-                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel)
+                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categories)
         }
 
         }
         TabFilter(categories) {
-            Log.i("HomeScreen", "category: ${it.nome}")
             selectedCategory = it
+            Log.i("HomeScreen", "category: ${it.nome}")
         }
         LazyRow(modifier = Modifier
             .fillMaxSize()
@@ -250,7 +261,7 @@ fun HomeScreen(
                         ),
                         onClick = {
                             geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
-                            mapCenter = geoPoint
+                            //mapCenter = geoPoint
                         }
                     ) {
                         Column(
@@ -295,7 +306,8 @@ fun TabFilter(
 @Composable
 fun AddButton(
     modifier: Modifier = Modifier,
-    firabaseViewModel: FirebaseViewModel
+    firabaseViewModel: FirebaseViewModel,
+    categorias:MutableState<List<Category>>
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
@@ -365,7 +377,7 @@ fun AddButton(
                             data = dialogCategoria()
                         }
                         if (tipo == "Local de Interesse"){
-                            dialogLocalInteresse()
+                            dialogLocalInteresse(categorias)
                         }
 
 
@@ -392,15 +404,16 @@ fun AddButton(
 }
 
 @Composable
-fun dialogLocalInteresse() {
+fun dialogLocalInteresse(
+    categorias: MutableState<List<Category>>
+) {
 
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var latitude by remember { mutableIntStateOf(0) }
     var longitude by remember { mutableIntStateOf(0) }
     var localizacao by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableIntStateOf(0) }
-    val categories = listOf("Category 1", "Category 2", "Category 3")
+    var selectedCategory by remember { mutableStateOf(categorias.value[0]) }
     var checkedLoc by remember { mutableStateOf(true) }
     var expandedCat by remember { mutableStateOf(false) }
 
@@ -427,17 +440,17 @@ fun dialogLocalInteresse() {
     Switch(checked = checkedLoc, onCheckedChange = { checkedLoc = it })
 
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-        Text(categories[selectedCategory], fontSize = 16.sp, modifier = Modifier
+        Text(text = selectedCategory.nome.toString(), fontSize = 16.sp, modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = { expandedCat = true })
             .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
             .padding(18.dp))
         DropdownMenu(expanded = expandedCat, onDismissRequest = { expandedCat = false }) {
-            categories.forEachIndexed { index, s ->
+            categorias.value.forEach { s ->
                 DropdownMenuItem(onClick = {
-                    selectedCategory = index
                     expandedCat = false
-                }, text = { Text(s, fontSize = 20.sp) })
+                    selectedCategory = s
+                }, text = { s.nome?.let { Text(it) } })
             }
         }
     }
@@ -447,7 +460,7 @@ fun dialogLocalInteresse() {
     val data = hashMapOf<String,Any>(
         "name" to nome,
         "description" to descricao,
-        "category" to categories[selectedCategory],
+        "category" to selectedCategory,
         "latitude" to latitude,
         "longitude" to longitude,
         "imagem" to "imagem"

@@ -89,7 +89,7 @@ class FirebaseViewModel : ViewModel() {
 
     fun addCategoryToFirestore(data: HashMap<String,Any>) {
         viewModelScope.launch {
-            FStorageUtil.addCategoryToFirestore(data, countCategoria.value) { exception ->
+            FStorageUtil.addCategoryToFirestore(data) { exception ->
                 _error.value = exception?.message
             }
         }

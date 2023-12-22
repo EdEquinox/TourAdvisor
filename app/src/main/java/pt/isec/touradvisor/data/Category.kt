@@ -1,6 +1,5 @@
 package pt.isec.touradvisor.data
 
-import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
@@ -11,7 +10,7 @@ data class Category (
     val imagem: String? = null
 ) {
     override fun toString(): String {
-        return nome ?: ""
+        return "Categoria:( nome = $nome , descricao = $descricao, imagem = $imagem )"
     }
 
     @Composable

@@ -2,17 +2,26 @@ package pt.isec.touradvisor.utils.firebase
 
 import android.content.res.AssetManager
 import android.util.Log
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Localizacao
 import pt.isec.touradvisor.data.POI
 import java.io.IOException
 import java.io.InputStream
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class FStorageUtil {
     companion object {
@@ -84,6 +93,7 @@ class FStorageUtil {
         private var listenerRegistrationPOIs: ListenerRegistration? = null
         private var listenerRegistrationLocations: ListenerRegistration? = null
 
+        @OptIn(DelicateCoroutinesApi::class)
         fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Localizacao>) -> Unit) {
             stopObserver()
             val categoria = mutableListOf<Category>()
@@ -100,6 +110,14 @@ class FStorageUtil {
                 }
             }
 
+            suspend fun DocumentReference.getSuspended(): DocumentSnapshot? = suspendCancellableCoroutine { continuation ->
+                this.get().addOnSuccessListener { document ->
+                    continuation.resume(document)
+                }.addOnFailureListener { e ->
+                    continuation.resumeWithException(e)
+                }
+            }
+
             listenerRegistrationCategorias = db.collection("Categorias")
                 .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     if (firebaseFirestoreException != null) {
@@ -110,13 +128,7 @@ class FStorageUtil {
                                 val nome = it.getString("nome") ?: ""
                                 val descricao = it.getString("descricao") ?: ""
                                 val imagem = it.getString("imagem") ?: ""
-                                Log.i(
-                                    "Firestore",
-                                    "startObserver: $nome $descricao $imagem"
-                                )
                                 categoria.add(Category(nome, descricao, imagem))
-                                Log.i("Firestore", "startObserver: ${categoria.size}")
-                                Log.i("Firestore", "startObserver: ${categoria[0].nome}")
                             }
                         }
                     }
@@ -128,26 +140,22 @@ class FStorageUtil {
                         return@addSnapshotListener
                     } else {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
-                            querySnapshot.documents.forEach(){
-                                val nome = it.getString("nome") ?: ""
-                                val descricao = it.getString("descricao") ?: ""
-                                val geoPoint = it.getGeoPoint("geoPoint")
+                            GlobalScope.launch{
+                                querySnapshot.documents.forEach {
+                                    val docRef = it.getDocumentReference("categoria")
+                                    val document = docRef?.getSuspended()
+                                    val categoriaPOI = document?.toObject(Category::class.java)
+                                    val nome = it.getString("nome") ?: ""
+                                    val descricao = it.getString("descricao") ?: ""
+                                    val geoPoint = it.getGeoPoint("geoPoint")
+                                    val imagem = it.getString("imagem") ?: ""
 
-                                val imagem = it.getString("imagem") ?: ""
-                                var categoriaPOI = Category()
-                                it.getDocumentReference("categoria")?.get()?.addOnSuccessListener { document ->
-                                    categoriaPOI = document.toObject(Category::class.java)!!
-                                    Log.i("Firestore", "startObserver: ${it.getString("nome")}")
+                                    poi.add(POI(nome, descricao, geoPoint, categoriaPOI, imagem))
                                 }
-                                Log.i(
-                                    "Firestore",
-                                    "startObserver: $nome $descricao ${categoriaPOI?.nome} $imagem"
-                                )
-                                poi.add(POI(nome, descricao, geoPoint, categoriaPOI, imagem))
+                                checkAllListenersCompleted()
                             }
                         }
                     }
-                    checkAllListenersCompleted()
                 }
             listenerRegistrationLocations = db.collection("Localizacao")
                 .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
@@ -160,10 +168,6 @@ class FStorageUtil {
                                 val descricao = it.getString("descricao") ?: ""
                                 val geoPoint = it.getGeoPoint("geoPoint")
                                 val imagem = it.getString("imagem") ?: ""
-                                Log.i(
-                                    "Firestore",
-                                    "startObserver: $nome $descricao $geoPoint $imagem"
-                                )
                                 location.add(Localizacao(nome, descricao, imagem, geoPoint))
                             }
                         }
@@ -231,16 +235,28 @@ class FStorageUtil {
 
         fun addCategoryToFirestore(
             data: HashMap<String, Any>,
-            countCategoria: Int,
             onResult: (Throwable?) -> Unit
         ) {
             val db = Firebase.firestore
-            db.collection("Categorias").document(countCategoria.toString()).set(data)
+            db.collection("Categorias").document(data["name"].toString()).set(data)
                 .addOnCompleteListener { result ->
                     onResult(result.exception)
                 }
 
         }
+
+        fun addLocationToFirestore(
+            data: HashMap<String, Any>,
+            onResult: (Throwable?) -> Unit
+        ) {
+            val db = Firebase.firestore
+            db.collection("Localizacao").document(data["name"].toString()).set(data)
+                .addOnCompleteListener { result ->
+                    onResult(result.exception)
+                }
+
+        }
+
 
     }
 }
