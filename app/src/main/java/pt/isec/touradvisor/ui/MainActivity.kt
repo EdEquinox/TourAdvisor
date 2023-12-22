@@ -59,14 +59,6 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            locationViewModel.backgroundLocationPermission = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        } else
-            locationViewModel.backgroundLocationPermission = locationViewModel.coarseLocationPermission || locationViewModel.fineLocationPermission
-
         if (!locationViewModel.coarseLocationPermission && !locationViewModel.fineLocationPermission) {
             basicPermissionsAuthorization.launch(
                 arrayOf(
@@ -76,7 +68,6 @@ class MainActivity : ComponentActivity() {
             )
             return false
         } else
-            verifyBackgroundPermission()
         return true
     }
 
@@ -86,44 +77,7 @@ class MainActivity : ComponentActivity() {
         locationViewModel.coarseLocationPermission = results[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
         locationViewModel.fineLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
         locationViewModel.startLocationUpdates()
-        verifyBackgroundPermission()
     }
 
-    private fun verifyBackgroundPermission() {
-        if (!(locationViewModel.coarseLocationPermission || locationViewModel.fineLocationPermission))
-            return
-
-        if (!locationViewModel.backgroundLocationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    this, Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                )
-            ) {
-                val dlg = AlertDialog.Builder(this)
-                    .setTitle("Background Location")
-                    .setMessage(
-                        "This application needs your permission to use location while in the background.\n" +
-                                "Please choose the correct option in the following screen" +
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                                    " (\"${packageManager.backgroundPermissionOptionLabel}\")."
-                                else
-                                    "."
-                    )
-                    .setPositiveButton("Ok") { _, _ ->
-                        backgroundPermissionAuthorization.launch(
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                        )
-                    }
-                    .create()
-                dlg.show()
-            }
-        }
-    }
-
-    private val backgroundPermissionAuthorization = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { result ->
-        locationViewModel.backgroundLocationPermission = result
-        Toast.makeText(this,"Background location enabled: $result", Toast.LENGTH_LONG).show()
-    }
 }
 

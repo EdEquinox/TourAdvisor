@@ -41,20 +41,6 @@ fun ProfileScreen(
     navController: NavController
 ) {
     Column {
-//        NavigationBar (content = {
-//            IconButton(onClick = { navController.navigateUp() }){
-//                Icon(
-//                    imageVector = Icons.Default.ArrowBack,
-//                    contentDescription = "Back",
-//                    tint = Color.White)
-//            }
-//            IconButton(onClick = { navController.navigate(Screens.SETTINGS.route)}){
-//                Icon(
-//                    imageVector = Icons.Default.Settings,
-//                    contentDescription = "Back",
-//                    tint = Color.White)
-//            }
-//        })
         Box(modifier = Modifier
             .background(color = colorResource(id = R.color.white))
         ){

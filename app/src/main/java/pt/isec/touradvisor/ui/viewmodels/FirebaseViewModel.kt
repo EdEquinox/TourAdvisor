@@ -1,12 +1,14 @@
 package pt.isec.touradvisor.ui.viewmodels
 
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
+import pt.isec.touradvisor.data.Category
+import pt.isec.touradvisor.data.Localizacao
+import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.utils.firebase.FAuthUtil
 import pt.isec.touradvisor.utils.firebase.FStorageUtil
 
@@ -29,6 +31,10 @@ class FirebaseViewModel : ViewModel() {
     private val _error = mutableStateOf<String?>(null)
     val error: MutableState<String?>
         get() = _error
+
+    private val countCategoria = mutableStateOf(0)
+    val countPOI = mutableStateOf(0)
+    val countLocalizacao = mutableStateOf(0)
 
     fun createUserWithEmail(email: String, password: String) {
         if (email.isBlank() || password.isBlank())
@@ -61,13 +67,34 @@ class FirebaseViewModel : ViewModel() {
         _error.value = null
     }
 
-    private val _nrgames = mutableLongStateOf(0L)
-    val nrgames : MutableState<Long>
-        get() = _nrgames
+    private val _categories = mutableStateOf(listOf<Category>())
+    val categories : MutableState<List<Category>>
+        get() = _categories
 
-    private val _topscore = mutableLongStateOf(0L)
-    val topscore : MutableState<Long>
-        get() = _topscore
+    private val _POIs = mutableStateOf(listOf<POI>())
+    val POIs : MutableState<List<POI>>
+        get() = _POIs
+
+    private val _locations = mutableStateOf(listOf<Localizacao>())
+    val locations : MutableState<List<Localizacao>>
+        get() = _locations
+
+    fun addPOIToFirestore(data: HashMap<String,Any>) {
+        viewModelScope.launch {
+            FStorageUtil.addPOIToFirestore(data) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
+
+    fun addCategoryToFirestore(data: HashMap<String,Any>) {
+        viewModelScope.launch {
+            FStorageUtil.addCategoryToFirestore(data, countCategoria.value) { exception ->
+                _error.value = exception?.message
+            }
+        }
+        countCategoria.value++
+    }
 
     fun addDataToFirestore() {
         viewModelScope.launch {
@@ -96,9 +123,10 @@ class FirebaseViewModel : ViewModel() {
 
     fun startObserver() {
         viewModelScope.launch {
-            FStorageUtil.startObserver { g, t ->
-                _nrgames.longValue = g
-                _topscore.longValue = t
+            FStorageUtil.startObserver { c, p, l ->
+                _categories.value = listOf(c)
+                _POIs.value = listOf(p)
+                _locations.value = listOf(l)
             }
         }
     }

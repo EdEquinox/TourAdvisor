@@ -8,6 +8,9 @@ import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
+import pt.isec.touradvisor.data.Category
+import pt.isec.touradvisor.data.Localizacao
+import pt.isec.touradvisor.data.POI
 import java.io.IOException
 import java.io.InputStream
 
@@ -77,27 +80,86 @@ class FStorageUtil {
                 .addOnCompleteListener { onResult(it.exception) }
         }
 
-        private var listenerRegistration: ListenerRegistration? = null
+        private var listenerRegistrationCategorias: ListenerRegistration? = null
+        private var listenerRegistrationPOIs: ListenerRegistration? = null
+        private var listenerRegistrationLocations: ListenerRegistration? = null
 
-        fun startObserver(onNewValues: (Long, Long) -> Unit) {
+        fun startObserver(onNewValues: (Category, POI, Localizacao) -> Unit) {
             stopObserver()
+            var categoria = Category()
+            var poi = POI()
+            var location = Localizacao()
             val db = Firebase.firestore
-            listenerRegistration = db.collection("Scores").document("Level1")
-                .addSnapshotListener { docSS, e ->
-                    if (e != null) {
+            listenerRegistrationCategorias = db.collection("Categorias")
+                .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
                         return@addSnapshotListener
-                    }
-                    if (docSS != null && docSS.exists()) {
-                        val nrgames = docSS.getLong("nrgames") ?: 0
-                        val topscore = docSS.getLong("topscore") ?: 0
-                        Log.i("Firestore", "$nrgames : $topscore")
-                        onNewValues(nrgames, topscore)
+                    } else {
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            querySnapshot.documents.forEach {
+                                val nome = it.getString("nome") ?: ""
+                                val descricao = it.getString("descricao") ?: ""
+                                val imagem = it.getString("imagem") ?: ""
+                                Log.i(
+                                    "Firestore",
+                                    "startObserver: $nome $descricao $imagem"
+                                )
+                                categoria = Category(nome, descricao, imagem, "")
+                            }
+                        }
                     }
                 }
+            listenerRegistrationPOIs = db.collection("POI")
+                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
+                        return@addSnapshotListener
+                    } else {
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            querySnapshot.documents.forEach(){
+                                val nome = it.getString("nome") ?: ""
+                                val descricao = it.getString("descricao") ?: ""
+                                val latitude = it.getDouble("latitude") ?: 0.0
+                                val longitude = it.getDouble("longitude") ?: 0.0
+                                val categoriaPOI = it.toObject(Category::class.java) ?: Category()
+                                val imagem = it.getString("imagem") ?: ""
+                                Log.i(
+                                    "Firestore",
+                                    "startObserver: $nome $descricao $latitude $longitude $categoriaPOI $imagem"
+                                )
+                                poi = POI(nome, descricao, latitude, longitude, categoriaPOI, imagem, "")
+                            }
+                        }
+                    }
+                }
+            listenerRegistrationLocations = db.collection("Localizacao")
+                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
+                        return@addSnapshotListener
+                    } else {
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            querySnapshot.documents.forEach(){
+                                val nome = it.getString("nome") ?: ""
+                                val descricao = it.getString("descricao") ?: ""
+                                val latitude = it.getDouble("latitude") ?: 0.0
+                                val longitude = it.getDouble("longitude") ?: 0.0
+                                val imagem = it.getString("imagem") ?: ""
+                                Log.i(
+                                    "Firestore",
+                                    "startObserver: $nome $descricao $latitude $longitude $imagem"
+                                )
+                                location = Localizacao(nome, descricao, imagem, latitude, longitude, "")
+                            }
+                        }
+                    }
+                }
+
+            onNewValues(categoria, poi, location)
         }
 
         fun stopObserver() {
-            listenerRegistration?.remove()
+            listenerRegistrationPOIs?.remove()
+            listenerRegistrationCategorias?.remove()
+            listenerRegistrationLocations?.remove()
         }
 
 // Storage
@@ -138,6 +200,28 @@ class FStorageUtil {
                 }
             }
 
+
+        }
+
+        fun addPOIToFirestore(data: HashMap<String, Any>, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            db.collection("Data").document("POI").set(data)
+                .addOnCompleteListener { result ->
+                    onResult(result.exception)
+                }
+
+        }
+
+        fun addCategoryToFirestore(
+            data: HashMap<String, Any>,
+            countCategoria: Int,
+            onResult: (Throwable?) -> Unit
+        ) {
+            val db = Firebase.firestore
+            db.collection("Categorias").document(countCategoria.toString()).set(data)
+                .addOnCompleteListener { result ->
+                    onResult(result.exception)
+                }
 
         }
 
