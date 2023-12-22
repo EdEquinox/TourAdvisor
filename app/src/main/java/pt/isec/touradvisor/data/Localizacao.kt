@@ -1,16 +1,14 @@
 package pt.isec.touradvisor.data
 
+import com.google.firebase.firestore.GeoPoint
 data class Localizacao (
-    val name: String,
-    val description: String,
-    val image: String,
-    val latitude: Double,
-    val longitude: Double,
-    val idUser: String
+    val name: String? = null,
+    val description: String? = null,
+    val image: String? = null,
+    val geoPoint: GeoPoint? = null
 ) {
-    constructor() : this("", "", "", 0.0, 0.0, "")
     override fun toString(): String {
-        return name
+        return name ?: ""
     }
 
 }

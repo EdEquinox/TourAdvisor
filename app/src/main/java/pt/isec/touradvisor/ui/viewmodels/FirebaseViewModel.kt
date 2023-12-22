@@ -124,9 +124,9 @@ class FirebaseViewModel : ViewModel() {
     fun startObserver() {
         viewModelScope.launch {
             FStorageUtil.startObserver { c, p, l ->
-                _categories.value = listOf(c)
-                _POIs.value = listOf(p)
-                _locations.value = listOf(l)
+                _categories.value = c
+                _POIs.value = p
+                _locations.value = l
             }
         }
     }

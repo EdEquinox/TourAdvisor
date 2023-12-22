@@ -1,8 +1,10 @@
 package pt.isec.touradvisor.ui.screens
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,7 +32,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stadium
@@ -68,8 +69,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import com.google.firebase.firestore.GeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import pt.isec.touradvisor.data.Category
@@ -106,6 +107,7 @@ fun HomeScreen(
     val openDialog = remember { mutableStateOf(false) }
     val pois = remember { firebaseViewModel.POIs }
     val categories = remember { firebaseViewModel.categories }
+    var selectedCategory: Category? by remember { mutableStateOf(null) }
 
     if (autoEnabled) {
         geoPoint = location?.let { GeoPoint(it.latitude, it.longitude) }
@@ -193,12 +195,18 @@ fun HomeScreen(
                     setMultiTouchControls(true)
                     controller.setZoom(18.0)
                     mapCenter?.let {
-                        controller.setCenter(it)
+                        controller.setCenter(
+                            org.osmdroid.util.GeoPoint(
+                                it.latitude,
+                                it.longitude
+                            )
+                        )
                     }
                     for (poi in pois.value) {
                         overlays.add(
                             Marker(this).apply {
-                                position = GeoPoint(poi.latitude, poi.longitude)
+                                position =
+                                    poi.geoPoint?.let { org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude) }
                                 title = poi.name
                                 setAnchor(
                                     Marker.ANCHOR_CENTER,
@@ -222,33 +230,38 @@ fun HomeScreen(
         }
 
         }
-        TabFilter(categories) { /*TODO*/ }
-        LazyColumn(modifier = Modifier
+        TabFilter(categories) {
+            Log.i("HomeScreen", "category: ${it.nome}")
+            selectedCategory = it
+        }
+        LazyRow(modifier = Modifier
             .fillMaxSize()
         ) {
             items(pois.value) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(128,224,255),
-                        contentColor = Color(0,0,128)
-                    ),
-                    onClick = {
-                        geoPoint = GeoPoint(it.latitude, it.longitude)
-                        mapCenter = geoPoint
-                    }
-                ) {
-                    Column(
+                if (selectedCategory == null || it.category == selectedCategory){
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(128,224,255),
+                            contentColor = Color(0,0,128)
+                        ),
+                        onClick = {
+                            geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
+                            mapCenter = geoPoint
+                        }
                     ) {
-                        Text(text = it.name, fontSize = 20.sp)
-                        Text(text = "${it.latitude} ${it.longitude}", fontSize = 14.sp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = it.name?:"", fontSize = 20.sp)
+                            Text(text = "${it.category?.nome}", fontSize = 14.sp)
+                        }
                     }
                 }
             }
@@ -260,7 +273,7 @@ fun HomeScreen(
 fun TabFilter(
     categorias:MutableState<List<Category>>,
     modifier: Modifier = Modifier,
-    onFilter: () -> Unit
+    onFilter: (Category) -> Unit
 ) {
     LazyRow(modifier = modifier
         .fillMaxWidth()
@@ -269,9 +282,10 @@ fun TabFilter(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
         items(categorias.value) {
-            IconButton(onClick = { System.out.println(categorias.value)/* Handle click */ }){
-                Icon(imageVector = Icons.Default.Dialpad/*aqui é a imagem da categoria*/,
-                    contentDescription = "Filter Icon")
+            IconButton(onClick = {
+                onFilter(it)
+            }){
+                Image(painter = it.ToImage(), contentDescription = "Filter Image")
             }
         }
 
@@ -345,13 +359,13 @@ fun AddButton(
                 text = {
                     Column {                //substituir por um switch case
                         if (tipo == "Localização") {
-                            data = DialogLocalização()
+                            data = dialogLocalização()
                         }
                         if (tipo == "Categoria"){
                             data = dialogCategoria()
                         }
                         if (tipo == "Local de Interesse"){
-                            DialogLocalInteresse()
+                            dialogLocalInteresse()
                         }
 
 
@@ -378,7 +392,7 @@ fun AddButton(
 }
 
 @Composable
-fun DialogLocalInteresse() {
+fun dialogLocalInteresse() {
 
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
@@ -471,7 +485,7 @@ fun dialogCategoria(): HashMap<String, Any> {
 }
 
 @Composable
-fun DialogLocalização(): HashMap<String, Any> {
+fun dialogLocalização(): HashMap<String, Any> {
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var localizacao by remember { mutableStateOf("") }
