@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,7 +70,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import com.google.firebase.Firebase
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.firestore
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -113,10 +116,11 @@ fun HomeScreen(
     var searchHistory = remember{
         mutableStateListOf("ola", "ole", "oli")
     }
+    var userCode by remember { mutableStateOf("") }
     var searchTrue: Boolean by remember { mutableStateOf(false) }
     val openDialog = remember { mutableStateOf(false) }
-    val pois by remember { mutableStateOf(firebaseViewModel.POIs) }
-    val categories by remember { mutableStateOf(firebaseViewModel.categories) }
+    val poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
+    val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
 
     if (autoEnabled) {
@@ -213,7 +217,7 @@ fun HomeScreen(
                             )
                         )
                     }
-                    for (poi in pois.value) {
+                    for (poi in poisList.value) {
                         overlays.add(
                             Marker(this).apply {
                                 position =
@@ -237,18 +241,18 @@ fun HomeScreen(
                     .align(Alignment.BottomCenter),
             ){
                 AddButton( modifier = Modifier
-                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categories)
+                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList)
         }
 
         }
-        TabFilter(categories) {
+        TabFilter(categoriesList) {
             selectedCategory = it
             Log.i("HomeScreen", "category: ${it.nome}")
         }
         LazyRow(modifier = Modifier
             .fillMaxSize()
         ) {
-            items(pois.value) {
+            items(poisList.value) {
                 if (selectedCategory == null || it.category == selectedCategory){
                     Card(
                         modifier = Modifier
@@ -266,12 +270,15 @@ fun HomeScreen(
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
+                                .width(150.dp)
+                                .padding(8.dp)
+                                .fillMaxHeight(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(text = it.name?:"", fontSize = 20.sp)
                             Text(text = "${it.category?.nome}", fontSize = 14.sp)
+                            Image(painter = it.toImage(), contentDescription = "POI Image")
+                            Text(text = it.geoPoint.toString(), fontSize = 14.sp)
                         }
                     }
                 }
@@ -296,7 +303,7 @@ fun TabFilter(
             IconButton(onClick = {
                 onFilter(it)
             }){
-                Image(painter = it.ToImage(), contentDescription = "Filter Image")
+                Image(painter = it.toImage(), contentDescription = "Filter Image")
             }
         }
 
@@ -369,7 +376,8 @@ fun AddButton(
                 onDismissRequest = { showDialog = false },
                 title = { Text(text = "Adicionar $tipo", fontSize = 20.sp) },
                 text = {
-                    Column {                //substituir por um switch case
+                    Column {      //substituir por um switch case
+
                         if (tipo == "Localização") {
                             data = dialogLocalização()
                         }
@@ -377,7 +385,7 @@ fun AddButton(
                             data = dialogCategoria()
                         }
                         if (tipo == "Local de Interesse"){
-                            dialogLocalInteresse(categorias)
+                            data = dialogLocalInteresse(categorias, firabaseViewModel)
                         }
 
 
@@ -385,8 +393,17 @@ fun AddButton(
                 },
                 confirmButton = {
                     Button(onClick = {
-                        firabaseViewModel.addCategoryToFirestore(data)
-                        showDialog = false }
+                        if (tipo == "Localização") {
+                            firabaseViewModel.addPOIToFirestore(data)
+                        }
+                        if (tipo == "Categoria"){
+                            firabaseViewModel.addCategoryToFirestore(data)
+                        }
+                        if (tipo == "Local de Interesse"){
+                            firabaseViewModel.addPOIToFirestore(data)
+                        }
+                        showDialog = false
+                    }
                     ) {
                         Text(text = "Adicionar")
                     }
@@ -405,8 +422,9 @@ fun AddButton(
 
 @Composable
 fun dialogLocalInteresse(
-    categorias: MutableState<List<Category>>
-) {
+    categorias: MutableState<List<Category>>,
+    firebaseViewModel: FirebaseViewModel
+): HashMap<String, Any> {
 
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
@@ -416,6 +434,7 @@ fun dialogLocalInteresse(
     var selectedCategory by remember { mutableStateOf(categorias.value[0]) }
     var checkedLoc by remember { mutableStateOf(true) }
     var expandedCat by remember { mutableStateOf(false) }
+    var imagem by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = nome,
@@ -455,43 +474,41 @@ fun dialogLocalInteresse(
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
-    UploadPhotoButton()
+    UploadPhotoButton(onUriReady ={ imagem = it}, type = "poi", picName = nome)
+    val db = Firebase.firestore
+    val docRef = db.collection("Categorias").document(selectedCategory.nome.toString())
 
     val data = hashMapOf<String,Any>(
-        "name" to nome,
-        "description" to descricao,
-        "category" to selectedCategory,
-        "latitude" to latitude,
-        "longitude" to longitude,
-        "imagem" to "imagem"
+        "nome" to nome,
+        "descricao" to descricao,
+        "categoria" to docRef,
+        "geoPoint" to GeoPoint(latitude.toDouble(), longitude.toDouble()),
+        "imagem" to imagem
     )
+    return data
 }
 
 @Composable
 fun dialogCategoria(): HashMap<String, Any> {
-    var nome by remember { mutableStateOf("") }
-    var descricao by remember { mutableStateOf("") }
-    var icon by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var image by remember { mutableStateOf("") }
 
     OutlinedTextField(
-        value = nome,
-        onValueChange = { nome = it },
+        value = name,
+        onValueChange = { name = it },
         label = { Text("Nome") }
     )
     OutlinedTextField(
-        value = descricao,
-        onValueChange = { descricao = it },
+        value = description,
+        onValueChange = { description = it },
         label = { Text("Descrição") }
     )
-    OutlinedTextField(
-        value = icon,
-        onValueChange = { icon = it },
-        label = { Text("Icon") }
-    )
+    UploadPhotoButton(onUriReady ={ image = it}, type = "category", picName = name)
     val data = hashMapOf<String,Any>(
-        "name" to nome,
-        "description" to descricao,
-        "icon" to icon
+        "nome" to name,
+        "descricao" to description,
+        "imagem" to image
     )
     return data
 
@@ -524,10 +541,10 @@ fun dialogLocalização(): HashMap<String, Any> {
         onValueChange = { imagem = it },
         label = { Text("Imagem") }
     )
-    UploadPhotoButton()
+    UploadPhotoButton(onUriReady ={ imagem = it}, type = "poi", picName = nome)
     val data = hashMapOf<String,Any>(
-        "name" to nome,
-        "description" to descricao,
+        "nome" to nome,
+        "descricao" to descricao,
         "latitude" to 0,
         "longitude" to 0,
         "imagem" to "imagem"
@@ -536,20 +553,24 @@ fun dialogLocalização(): HashMap<String, Any> {
 }
 
 @Composable
-fun UploadPhotoButton() {
+fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: String) {
     val context = LocalContext.current
-    var uri: Uri? = null
+    val uri = remember { mutableStateOf("") }
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
-        uri: Uri? ->
-        // Handle the returned Uri
-        // You can use it to display the selected image or upload it to your server
-        uploadFile(context.contentResolver.openInputStream(uri!!)!!, "image.jpg")
-        println("Selected image URI: $uri")
-
+        selectedUri: Uri? ->
+        selectedUri?.let {
+            context.contentResolver.openInputStream(it)?.let { inputStream ->
+                uploadFile(inputStream, type,picName){downloadUrl ->
+                    uri.value = downloadUrl
+                    onUriReady(downloadUrl)
+                }
+            }
+        }
     }
 
     Button(onClick = { launcher.launch("image/*") }) {
         Text("Upload Photo")
     }
+
 }
 

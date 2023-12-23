@@ -1,5 +1,8 @@
 package pt.isec.touradvisor.data
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.painter.Painter
+import coil.compose.rememberImagePainter
 import com.google.firebase.firestore.GeoPoint
 
 data class POI(
@@ -11,5 +14,11 @@ data class POI(
 ) {
     override fun toString(): String {
         return name ?: ""
+    }
+
+    @Composable
+    fun toImage() : Painter {
+        val painter = rememberImagePainter(data = this.image)
+        return painter
     }
 }

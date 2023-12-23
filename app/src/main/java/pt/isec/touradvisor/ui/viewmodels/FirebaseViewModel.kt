@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
 import pt.isec.touradvisor.data.Category
-import pt.isec.touradvisor.data.Localizacao
+import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.utils.firebase.FAuthUtil
 import pt.isec.touradvisor.utils.firebase.FStorageUtil
@@ -32,9 +32,9 @@ class FirebaseViewModel : ViewModel() {
     val error: MutableState<String?>
         get() = _error
 
-    private val countCategoria = mutableStateOf(0)
-    val countPOI = mutableStateOf(0)
-    val countLocalizacao = mutableStateOf(0)
+    private val _userUID = mutableStateOf(FAuthUtil.currentUser?.uid)
+    val userUID : MutableState<String?>
+        get() = _userUID
 
     fun createUserWithEmail(email: String, password: String) {
         if (email.isBlank() || password.isBlank())
@@ -75,8 +75,8 @@ class FirebaseViewModel : ViewModel() {
     val POIs : MutableState<List<POI>>
         get() = _POIs
 
-    private val _locations = mutableStateOf(listOf<Localizacao>())
-    val locations : MutableState<List<Localizacao>>
+    private val _locations = mutableStateOf(listOf<Local>())
+    val locations : MutableState<List<Local>>
         get() = _locations
 
     fun addPOIToFirestore(data: HashMap<String,Any>) {
@@ -93,7 +93,6 @@ class FirebaseViewModel : ViewModel() {
                 _error.value = exception?.message
             }
         }
-        countCategoria.value++
     }
 
     fun addDataToFirestore() {

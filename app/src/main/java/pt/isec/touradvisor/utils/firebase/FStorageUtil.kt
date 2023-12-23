@@ -11,12 +11,11 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import pt.isec.touradvisor.data.Category
-import pt.isec.touradvisor.data.Localizacao
+import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
 import java.io.IOException
 import java.io.InputStream
@@ -94,11 +93,13 @@ class FStorageUtil {
         private var listenerRegistrationLocations: ListenerRegistration? = null
 
         @OptIn(DelicateCoroutinesApi::class)
-        fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Localizacao>) -> Unit) {
+        fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Local>) -> Unit) {
             stopObserver()
-            val categoria = mutableListOf<Category>()
-            val poi = mutableListOf<POI>()
-            val location = mutableListOf<Localizacao>()
+
+            val categories = mutableListOf<Category>()
+            val pois = mutableListOf<POI>()
+            val locations = mutableListOf<Local>()
+
             val db = Firebase.firestore
 
             var completedListeners = 0
@@ -106,7 +107,8 @@ class FStorageUtil {
             fun checkAllListenersCompleted() {
                 completedListeners++
                 if (completedListeners == 3) {
-                    onNewValues(categoria, poi, location)
+                    Log.i("Firestore", "adicionou tudo")
+                    onNewValues(categories, pois, locations)
                 }
             }
 
@@ -125,10 +127,10 @@ class FStorageUtil {
                     } else {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
                             querySnapshot.documents.forEach {
-                                val nome = it.getString("nome") ?: ""
-                                val descricao = it.getString("descricao") ?: ""
-                                val imagem = it.getString("imagem") ?: ""
-                                categoria.add(Category(nome, descricao, imagem))
+                                val name = it.getString("nome") ?: ""
+                                val description = it.getString("descricao") ?: ""
+                                val image = it.getString("imagem") ?: ""
+                                categories.add(Category(name, description, image))
                             }
                         }
                     }
@@ -144,13 +146,13 @@ class FStorageUtil {
                                 querySnapshot.documents.forEach {
                                     val docRef = it.getDocumentReference("categoria")
                                     val document = docRef?.getSuspended()
-                                    val categoriaPOI = document?.toObject(Category::class.java)
-                                    val nome = it.getString("nome") ?: ""
-                                    val descricao = it.getString("descricao") ?: ""
+                                    val category = document?.toObject(Category::class.java)
+                                    val name = it.getString("nome") ?: ""
+                                    val description = it.getString("descricao") ?: ""
                                     val geoPoint = it.getGeoPoint("geoPoint")
-                                    val imagem = it.getString("imagem") ?: ""
+                                    val image = it.getString("imagem") ?: ""
 
-                                    poi.add(POI(nome, descricao, geoPoint, categoriaPOI, imagem))
+                                    pois.add(POI(name, description, geoPoint, category, image))
                                 }
                                 checkAllListenersCompleted()
                             }
@@ -164,11 +166,11 @@ class FStorageUtil {
                     } else {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
                             querySnapshot.documents.forEach(){
-                                val nome = it.getString("nome") ?: ""
-                                val descricao = it.getString("descricao") ?: ""
+                                val name = it.getString("nome") ?: ""
+                                val description = it.getString("descricao") ?: ""
                                 val geoPoint = it.getGeoPoint("geoPoint")
-                                val imagem = it.getString("imagem") ?: ""
-                                location.add(Localizacao(nome, descricao, imagem, geoPoint))
+                                val image = it.getString("imagem") ?: ""
+                                locations.add(Local(name, description, image, geoPoint))
                             }
                         }
                     }
@@ -197,10 +199,10 @@ class FStorageUtil {
 
 //https://firebase.google.com/docs/storage/android/upload-files
 
-        fun uploadFile(inputStream: InputStream, imgFile: String) {
+        fun uploadFile(inputStream: InputStream,path:String, imgFile: String, onUploadComplete: (String) -> Unit) {
             val storage = Firebase.storage
             val ref1 = storage.reference
-            val ref2 = ref1.child("images")
+            val ref2 = ref1.child(path)
             val ref3 = ref2.child(imgFile)
 
             val uploadTask = ref3.putStream(inputStream)
@@ -215,6 +217,7 @@ class FStorageUtil {
                 if (task.isSuccessful) {
                     val downloadUri = task.result
                     println(downloadUri.toString())
+                    onUploadComplete(downloadUri.toString())
                 } else {
                     // Handle failures
                     // ...
@@ -226,7 +229,7 @@ class FStorageUtil {
 
         fun addPOIToFirestore(data: HashMap<String, Any>, onResult: (Throwable?) -> Unit) {
             val db = Firebase.firestore
-            db.collection("Data").document("POI").set(data)
+            db.collection("POI").document(data["nome"].toString()).set(data)
                 .addOnCompleteListener { result ->
                     onResult(result.exception)
                 }
@@ -238,7 +241,7 @@ class FStorageUtil {
             onResult: (Throwable?) -> Unit
         ) {
             val db = Firebase.firestore
-            db.collection("Categorias").document(data["name"].toString()).set(data)
+            db.collection("Categorias").document(data["nome"].toString()).set(data)
                 .addOnCompleteListener { result ->
                     onResult(result.exception)
                 }

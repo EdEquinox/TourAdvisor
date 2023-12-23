@@ -3,21 +3,21 @@ package pt.isec.touradvisor.data
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
-
-data class Category (
-    val nome: String? = null,
-    val descricao: String? = null,
-    val imagem: String? = null
+import com.google.firebase.firestore.GeoPoint
+data class Local (
+    val name: String? = null,
+    val description: String? = null,
+    val image: String? = null,
+    val geoPoint: GeoPoint? = null
 ) {
     override fun toString(): String {
-        return "Category:( name = $nome , description = $descricao, image = $imagem )"
+        return name ?: ""
     }
 
     @Composable
     fun toImage() : Painter {
-        val painter = rememberImagePainter(data = this.imagem)
+        val painter = rememberImagePainter(data = this.image)
         return painter
     }
-
 
 }
