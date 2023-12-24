@@ -24,18 +24,8 @@ import kotlin.coroutines.resumeWithException
 
 class FStorageUtil {
     companion object {
-        fun addDataToFirestore(onResult: (Throwable?) -> Unit) {
-            val db = Firebase.firestore
 
-            val scores = hashMapOf(
-                "nrgames" to 0,
-                "topscore" to 0
-            )
-            db.collection("Scores").document("Level1").set(scores)
-                .addOnCompleteListener { result ->
-                    onResult(result.exception)
-                }
-        }
+
 
         fun updateDataInFirestore(onResult: (Throwable?) -> Unit) {
             val db = Firebase.firestore
@@ -107,7 +97,6 @@ class FStorageUtil {
             fun checkAllListenersCompleted() {
                 completedListeners++
                 if (completedListeners == 3) {
-                    Log.i("Firestore", "adicionou tudo")
                     onNewValues(categories, pois, locations)
                 }
             }
@@ -177,6 +166,52 @@ class FStorageUtil {
                     checkAllListenersCompleted()
                 }
 
+        }
+
+        @OptIn(DelicateCoroutinesApi::class)
+        fun getUserPOIS(user: String, onNewValues: (MutableList<POI>) -> Unit) {
+            val db = Firebase.firestore
+            val pois = mutableListOf<POI>()
+            Log.i("POISsadasd", user.toString())
+
+            suspend fun DocumentReference.getSuspended(): DocumentSnapshot? =
+                suspendCancellableCoroutine { continuation ->
+                    this.get().addOnSuccessListener { document ->
+                        continuation.resume(document)
+                    }.addOnFailureListener { e ->
+                        continuation.resumeWithException(e)
+                    }
+                }
+
+            db.collection("POI")
+                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
+                        return@addSnapshotListener
+                    } else {
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            GlobalScope.launch {
+                                querySnapshot.documents.forEach {
+                                    val docRef = it.getDocumentReference("categoria")
+                                    val document = docRef?.getSuspended()
+                                    val category = document?.toObject(Category::class.java)
+                                    val name = it.getString("nome") ?: ""
+                                    val description = it.getString("descricao") ?: ""
+                                    val geoPoint = it.getGeoPoint("geoPoint")
+                                    val image = it.getString("imagem") ?: ""
+                                    val nuser = it.getString("user") ?: ""
+                                    Log.i("POISaaaaaaaaaa", nuser)
+                                    if (nuser == user){
+                                        Log.i("POISaaaaaaaaaa", "entrou")
+                                        pois.add(POI(name, description, geoPoint, category, image, nuser))
+                                        Log.i("POISaded", pois.toString())
+                                    }
+                                }
+                                Log.i("POIS", pois.toString())
+                                onNewValues(pois)
+                            }
+                        }
+                    }
+                }
         }
 
         fun stopObserver() {
@@ -259,7 +294,6 @@ class FStorageUtil {
                 }
 
         }
-
 
     }
 }

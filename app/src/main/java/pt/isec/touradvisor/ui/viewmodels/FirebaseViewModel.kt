@@ -2,6 +2,8 @@ package pt.isec.touradvisor.ui.viewmodels
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
@@ -35,6 +37,10 @@ class FirebaseViewModel : ViewModel() {
     private val _userUID = mutableStateOf(FAuthUtil.currentUser?.uid)
     val userUID : MutableState<String?>
         get() = _userUID
+
+    private val _myPOIs = mutableStateOf(listOf<POI>())
+    val myPOIs : MutableState<List<POI>>
+        get() = _myPOIs
 
     fun createUserWithEmail(email: String, password: String) {
         if (email.isBlank() || password.isBlank())
@@ -95,10 +101,12 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
-    fun addDataToFirestore() {
+    fun getUserPOIs(){
         viewModelScope.launch {
-            FStorageUtil.addDataToFirestore { exception ->
-                _error.value = exception?.message
+            userUID.value?.let {
+                FStorageUtil.getUserPOIS(it) { pois->
+                    myPOIs.value = pois
+                }
             }
         }
     }

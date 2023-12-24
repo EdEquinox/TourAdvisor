@@ -35,10 +35,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import pt.isec.touradviser.R
+import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 
 @Composable
 fun ProfileScreen(
-    navController: NavController
+    navController: NavController,
+    firebaseViewModel: FirebaseViewModel
 ) {
     Column {
         Box(modifier = Modifier
@@ -65,19 +67,19 @@ fun ProfileScreen(
             .fillMaxWidth()
             .background(color = colorResource(id = R.color.white))
         ){
-            val items = (0..100).toList()
+            val items = firebaseViewModel.myPOIs
             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxSize()) {
-                items(items = items) { item ->
+                items(items.value) { item ->
                     Card(
                         modifier = Modifier
-                            .padding(8.dp)
+                            .padding(5.dp)
                             .fillMaxWidth()
-                            .height(100.dp)
+                            .height(150.dp)
                     ) {
-                        Text(
-                            text = "Item $item",
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        Column {
+                            item.toImage()
+                            Text(text = item.name.toString())
+                        }
                     }
                 }
             }

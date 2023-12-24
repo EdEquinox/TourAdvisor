@@ -54,6 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +78,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import pt.isec.touradvisor.data.Category
+import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.utils.firebase.FStorageUtil.Companion.uploadFile
@@ -92,6 +94,7 @@ fun HomeScreen(
     onLogout: () -> Unit
 ) {
     firebaseViewModel.startObserver();
+    firebaseViewModel.getUserPOIs()
 
 //    @Composable
 //    fun YourScreen() {
@@ -104,7 +107,7 @@ fun HomeScreen(
 //        }
 //    }
 
-    var autoEnabled by remember { mutableStateOf(true) }
+    var autoEnabled by remember { mutableStateOf(false) }
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
         mutableStateOf(location?.let { GeoPoint(it.latitude, it.longitude) })
@@ -203,51 +206,19 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(8.dp)
                     )
-            AndroidView(
-                factory = { context->
-                MapView(context).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
-                    setMultiTouchControls(true)
-                    controller.setZoom(18.0)
-                    mapCenter?.let {
-                        controller.setCenter(
-                            org.osmdroid.util.GeoPoint(
-                                it.latitude,
-                                it.longitude
-                            )
-                        )
-                    }
-                    for (poi in poisList.value) {
-                        overlays.add(
-                            Marker(this).apply {
-                                position =
-                                    poi.geoPoint?.let { org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude) }
-                                title = poi.name
-                                setAnchor(
-                                    Marker.ANCHOR_CENTER,
-                                    Marker.ANCHOR_BOTTOM
-                                )
-                            }
-                        )
-                    }
-                }
-            }, modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(0f)
-            )
+            MapViewComposable(mapCenter = mapCenter, poisList = poisList.value)
             Row(
                 modifier
                     .zIndex(1f)
                     .align(Alignment.BottomCenter),
             ){
                 AddButton( modifier = Modifier
-                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList)
+                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList, locationViewModel = locationViewModel)
         }
 
         }
         TabFilter(categoriesList) {
             selectedCategory = it
-            Log.i("HomeScreen", "category: ${it.nome}")
         }
         LazyRow(modifier = Modifier
             .fillMaxSize()
@@ -265,7 +236,8 @@ fun HomeScreen(
                         ),
                         onClick = {
                             geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
-                            //mapCenter = geoPoint
+                            mapCenter = geoPoint
+                            Log.i("Map", "Clicked on ${it.geoPoint?.latitude} ${it.geoPoint?.longitude}")
                         }
                     ) {
                         Column(
@@ -285,6 +257,62 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Composable
+fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
+    AndroidView(
+        factory = { context ->
+            MapView(context).apply {
+                setTileSource(TileSourceFactory.MAPNIK)
+                setMultiTouchControls(true)
+                controller.setZoom(18.0)
+                for (poi in poisList) {
+                    overlays.add(
+                        Marker(this).apply {
+                            position =
+                                poi.geoPoint?.let {
+                                    org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude)
+                                }
+                            title = poi.name
+                            setAnchor(
+                                Marker.ANCHOR_CENTER,
+                                Marker.ANCHOR_BOTTOM
+                            )
+                        }
+                    )
+                }
+            }
+        }, update = { mapView ->
+            mapView.overlays.clear()
+            for (poi in poisList) {
+                mapView.overlays.add(
+                    Marker(mapView).apply {
+                        position =
+                            poi.geoPoint?.let {
+                                org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude)
+                            }
+                        title = poi.name
+                        setAnchor(
+                            Marker.ANCHOR_CENTER,
+                            Marker.ANCHOR_BOTTOM
+                        )
+                    }
+                )
+            }
+            mapCenter?.let {
+                mapView.controller.animateTo(
+                    org.osmdroid.util.GeoPoint(
+                        it.latitude,
+                        it.longitude
+                    )
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(0f)
+    )
 }
 
 @Composable
@@ -314,7 +342,8 @@ fun TabFilter(
 fun AddButton(
     modifier: Modifier = Modifier,
     firabaseViewModel: FirebaseViewModel,
-    categorias:MutableState<List<Category>>
+    categorias:MutableState<List<Category>>,
+    locationViewModel: LocationViewModel
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
@@ -385,7 +414,7 @@ fun AddButton(
                             data = dialogCategoria()
                         }
                         if (tipo == "Local de Interesse"){
-                            data = dialogLocalInteresse(categorias, firabaseViewModel)
+                            data = dialogLocalInteresse(categorias, firabaseViewModel, locationViewModel)
                         }
 
 
@@ -423,15 +452,16 @@ fun AddButton(
 @Composable
 fun dialogLocalInteresse(
     categorias: MutableState<List<Category>>,
-    firebaseViewModel: FirebaseViewModel
+    firebaseViewModel: FirebaseViewModel,
+    locationViewModel: LocationViewModel
 ): HashMap<String, Any> {
 
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
-    var latitude by remember { mutableIntStateOf(0) }
-    var longitude by remember { mutableIntStateOf(0) }
-    var localizacao by remember { mutableStateOf("") }
+    var latitude by remember { mutableDoubleStateOf(0.0) }
+    var longitude by remember { mutableDoubleStateOf(0.0) }
     var selectedCategory by remember { mutableStateOf(categorias.value[0]) }
+    var geoPoint by remember { mutableStateOf(GeoPoint(0.0,0.0)) }
     var checkedLoc by remember { mutableStateOf(true) }
     var expandedCat by remember { mutableStateOf(false) }
     var imagem by remember { mutableStateOf("") }
@@ -449,14 +479,25 @@ fun dialogLocalInteresse(
             .fillMaxWidth()
             .height(100.dp)
     )
-    OutlinedTextField(
-        value = localizacao,
-        onValueChange = { localizacao = it },
-        label = { Text("Coordenadas") }
-    )
     Spacer(modifier = Modifier.height(8.dp))
     Text(text = "Local atual?", fontSize = 13.sp)
-    Switch(checked = checkedLoc, onCheckedChange = { checkedLoc = it })
+    Switch(checked = checkedLoc, onCheckedChange = {
+        checkedLoc = it
+    })
+    if (checkedLoc){
+        geoPoint = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
+    } else {
+        OutlinedTextField(
+            value = latitude.toString(),
+            onValueChange = { latitude = it.toDouble() },
+            label = { Text("Latitude") }
+        )
+        OutlinedTextField(
+            value = longitude.toString(),
+            onValueChange = { longitude = it.toDouble() },
+            label = { Text("Longitude") }
+        )
+    }
 
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
         Text(text = selectedCategory.nome.toString(), fontSize = 16.sp, modifier = Modifier
@@ -482,8 +523,9 @@ fun dialogLocalInteresse(
         "nome" to nome,
         "descricao" to descricao,
         "categoria" to docRef,
-        "geoPoint" to GeoPoint(latitude.toDouble(), longitude.toDouble()),
-        "imagem" to imagem
+        "geoPoint" to geoPoint,
+        "imagem" to imagem,
+        "user" to firebaseViewModel.userUID.value!!
     )
     return data
 }

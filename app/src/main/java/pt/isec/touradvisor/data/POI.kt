@@ -4,13 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
 import com.google.firebase.firestore.GeoPoint
+import pt.isec.touradvisor.ui.viewmodels.User
 
 data class POI(
     val name: String? = null,
     val description: String? = null,
     val geoPoint: GeoPoint? = null,
     val category: Category?,
-    val image: String? = null
+    val image: String? = null,
+    val user: String? = null
 ) {
     override fun toString(): String {
         return name ?: ""

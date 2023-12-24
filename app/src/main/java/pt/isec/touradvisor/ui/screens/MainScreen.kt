@@ -106,7 +106,7 @@ fun MainScreen(
                 }
             }
             composable(Screens.PROFILE.route) {
-                ProfileScreen( navController = navController)
+                ProfileScreen( navController = navController, firebaseViewModel = firebaseViewModel)
             }
             composable(Screens.LOGIN.route) {
                 LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
