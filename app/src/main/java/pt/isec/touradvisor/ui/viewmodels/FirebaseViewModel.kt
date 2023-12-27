@@ -7,22 +7,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
+import pt.isec.touradvisor.data.User
+import pt.isec.touradvisor.data.toUser
 import pt.isec.touradvisor.utils.firebase.FAuthUtil
 import pt.isec.touradvisor.utils.firebase.FStorageUtil
-
-data class User(val name: String, val email: String, val picture:String?)
-
-fun FirebaseUser.toUser() : User{
-    val displayName = this.displayName ?: ""
-    val email = this.email ?: ""
-    val picture = this.photoUrl.toString() ?:""
-
-    return User(displayName, email, picture)
-}
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class FirebaseViewModel : ViewModel() {
 
@@ -41,6 +37,10 @@ class FirebaseViewModel : ViewModel() {
     private val _myPOIs = mutableStateOf(listOf<POI>())
     val myPOIs : MutableState<List<POI>>
         get() = _myPOIs
+
+    private val _sortedPOIs = mutableStateOf(listOf<POI>())
+    val sortedPOIs : MutableState<List<POI>>
+        get() = _sortedPOIs
 
     fun createUserWithEmail(email: String, password: String) {
         if (email.isBlank() || password.isBlank())
@@ -101,25 +101,14 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
-    fun getUserPOIs(){
+    fun addLocationToFirestore(data: HashMap<String,Any>) {
         viewModelScope.launch {
-            userUID.value?.let {
-                FStorageUtil.getUserPOIS(it) { pois->
-                    myPOIs.value = pois
-                }
-            }
-        }
-    }
-
-    fun updateDataInFirestore() {
-        viewModelScope.launch {
-            //FirebaseUtils.updateDataInFirestore()
-            FStorageUtil.updateDataInFirestoreTrans { exception ->
+            FStorageUtil.addLocationToFirestore(data) { exception ->
                 _error.value = exception?.message
             }
         }
     }
-
+    
     fun removeDataFromFirestore() {
         viewModelScope.launch {
             FStorageUtil.removeDataFromFirestore { exception ->
@@ -128,12 +117,27 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
-    fun startObserver() {
-        viewModelScope.launch {
-            FStorageUtil.startObserver { c, p, l ->
+    suspend fun startObserver() : Boolean {
+        return suspendCoroutine { continuation ->
+            FStorageUtil.startObserver(onNewValues = { c, p, l ->
                 _categories.value = c
                 _POIs.value = p
                 _locations.value = l
+            }, onReady = {
+                continuation.resume(true)
+            })
+        }
+
+    }
+
+    suspend fun getUserPOIs(): List<POI> {
+        return suspendCoroutine { continuation ->
+            userUID.value?.let {
+                FStorageUtil.getUserPOIS(it) { pois->
+                    myPOIs.value = pois
+                    sortedPOIs.value = pois
+                    continuation.resume(pois)
+                }
             }
         }
     }
@@ -141,6 +145,38 @@ class FirebaseViewModel : ViewModel() {
     fun stopObserver() {
         viewModelScope.launch {
             FStorageUtil.stopObserver()
+        }
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String, newPassword2: String) {
+        viewModelScope.launch {
+            FAuthUtil.changePassword(oldPassword, newPassword, newPassword2) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
+
+    fun changeEmail(newEmail: String) {
+        viewModelScope.launch {
+            FAuthUtil.changeEmail(newEmail) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
+
+    fun changeNick(nickname: String) {
+        viewModelScope.launch {
+            FAuthUtil.changeNickname(nickname) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
+
+    fun deleteAccount(password: String) {
+        viewModelScope.launch {
+            FAuthUtil.deleteAccount(password) { exception ->
+                _error.value = exception?.message
+            }
         }
     }
 }

@@ -21,11 +21,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import pt.isec.touradviser.R
+import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
+import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 
 @Composable
 fun LandingScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    firebaseViewModel: FirebaseViewModel,
+    locationViewModel: LocationViewModel
 ) {
+
+//    locationViewModel.startLocationUpdates()
 
     val infiniteTransition = rememberInfiniteTransition(label = "animation")
     val scale by infiniteTransition.animateFloat(
@@ -51,8 +57,10 @@ fun LandingScreen(
     }
 
     LaunchedEffect(key1 = true) {
-        delay(1500L) // delay for 1.5 seconds
-        navController.navigate(Screens.LOGIN.route) // replace with your next screen route
+        locationViewModel.startLocationUpdates()
+        firebaseViewModel.startObserver()
+        firebaseViewModel.getUserPOIs()
+        navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
     }
 
 }

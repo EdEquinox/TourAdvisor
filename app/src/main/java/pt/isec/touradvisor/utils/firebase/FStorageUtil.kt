@@ -4,9 +4,7 @@ import android.content.res.AssetManager
 import android.util.Log
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -27,48 +25,6 @@ class FStorageUtil {
 
 
 
-        fun updateDataInFirestore(onResult: (Throwable?) -> Unit) {
-            val db = Firebase.firestore
-            val v = db.collection("Scores").document("Level1")
-
-            v.get(Source.SERVER)
-                .addOnSuccessListener {
-                    val exists = it.exists()
-                    Log.i("Firestore", "updateDataInFirestore: Success? $exists")
-                    if (!exists) {
-                        onResult(Exception("Doesn't exist"))
-                        return@addOnSuccessListener
-                    }
-                    val value = it.getLong("nrgames") ?: 0
-                    v.update("nrgames", value + 1)
-                    onResult(null)
-                }
-                .addOnFailureListener { e ->
-                    onResult(e)
-                }
-        }
-
-        fun updateDataInFirestoreTrans(onResult: (Throwable?) -> Unit) {
-            val db = Firebase.firestore
-            val v = db.collection("Scores").document("Level1")
-
-            db.runTransaction { transaction ->
-                val doc = transaction.get(v)
-                if (doc.exists()) {
-                    val newnrgames = (doc.getLong("nrgames") ?: 0) + 1
-                    val newtopscore = (doc.getLong("topscore") ?: 0) + 100
-                    transaction.update(v, "nrgames", newnrgames)
-                    transaction.update(v, "topscore", newtopscore)
-                    null
-                } else
-                    throw FirebaseFirestoreException(
-                        "Doesn't exist",
-                        FirebaseFirestoreException.Code.UNAVAILABLE
-                    )
-            }.addOnCompleteListener { result ->
-                onResult(result.exception)
-            }
-        }
 
         fun removeDataFromFirestore(onResult: (Throwable?) -> Unit) {
             val db = Firebase.firestore
@@ -83,7 +39,7 @@ class FStorageUtil {
         private var listenerRegistrationLocations: ListenerRegistration? = null
 
         @OptIn(DelicateCoroutinesApi::class)
-        fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Local>) -> Unit) {
+        fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Local>) -> Unit, onReady: () -> Unit) {
             stopObserver()
 
             val categories = mutableListOf<Category>()
@@ -98,6 +54,7 @@ class FStorageUtil {
                 completedListeners++
                 if (completedListeners == 3) {
                     onNewValues(categories, pois, locations)
+                    onReady()
                 }
             }
 
@@ -133,15 +90,18 @@ class FStorageUtil {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
                             GlobalScope.launch{
                                 querySnapshot.documents.forEach {
-                                    val docRef = it.getDocumentReference("categoria")
-                                    val document = docRef?.getSuspended()
-                                    val category = document?.toObject(Category::class.java)
+                                    val docRefCat = it.getDocumentReference("categoria")
+                                    val docRefLoc = it.getDocumentReference("localizacao")
+                                    val documentCat = docRefCat?.getSuspended()
+                                    val documentLoc = docRefLoc?.getSuspended()
+                                    val category = documentCat?.toObject(Category::class.java)
+                                    val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
                                     val description = it.getString("descricao") ?: ""
                                     val geoPoint = it.getGeoPoint("geoPoint")
                                     val image = it.getString("imagem") ?: ""
 
-                                    pois.add(POI(name, description, geoPoint, category, image))
+                                    pois.add(POI(name, description, geoPoint, category,  location, image))
                                 }
                                 checkAllListenersCompleted()
                             }
@@ -191,9 +151,12 @@ class FStorageUtil {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
                             GlobalScope.launch {
                                 querySnapshot.documents.forEach {
-                                    val docRef = it.getDocumentReference("categoria")
-                                    val document = docRef?.getSuspended()
-                                    val category = document?.toObject(Category::class.java)
+                                    val docRefCat = it.getDocumentReference("categoria")
+                                    val docRefLoc = it.getDocumentReference("localizacao")
+                                    val documentCat = docRefCat?.getSuspended()
+                                    val documentLoc = docRefLoc?.getSuspended()
+                                    val category = documentCat?.toObject(Category::class.java)
+                                    val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
                                     val description = it.getString("descricao") ?: ""
                                     val geoPoint = it.getGeoPoint("geoPoint")
@@ -202,7 +165,7 @@ class FStorageUtil {
                                     Log.i("POISaaaaaaaaaa", nuser)
                                     if (nuser == user){
                                         Log.i("POISaaaaaaaaaa", "entrou")
-                                        pois.add(POI(name, description, geoPoint, category, image, nuser))
+                                        pois.add(POI(name, description, geoPoint, category, location, image, nuser))
                                         Log.i("POISaded", pois.toString())
                                     }
                                 }
@@ -288,7 +251,7 @@ class FStorageUtil {
             onResult: (Throwable?) -> Unit
         ) {
             val db = Firebase.firestore
-            db.collection("Localizacao").document(data["name"].toString()).set(data)
+            db.collection("Localizacao").document(data["nome"].toString()).set(data)
                 .addOnCompleteListener { result ->
                     onResult(result.exception)
                 }

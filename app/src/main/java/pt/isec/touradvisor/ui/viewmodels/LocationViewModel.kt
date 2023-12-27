@@ -51,24 +51,4 @@ class LocationViewModel(
         stopLocationUpdates()
     }
 
-    val POIs = listOf(
-        Coordinates("Liverpool",53.430819,-2.960828),
-        Coordinates("Manchester City",53.482989,-2.200292),
-        Coordinates("Manchester United",53.463056,-2.291389),
-        Coordinates("Bayern Munich", 48.218775, 11.624753),
-        Coordinates("Barcelona",41.38087,2.122802),
-        Coordinates("Real Madrid",40.45306,-3.68835)
-    )
-
-    val categories = listOf(
-        Coordinates("Liverpool",53.430819,-2.960828),
-        Coordinates("Manchester City",53.482989,-2.200292),
-        Coordinates("Manchester United",53.463056,-2.291389),
-        Coordinates("Bayern Munich", 48.218775, 11.624753),
-        Coordinates("Barcelona",41.38087,2.122802),
-        Coordinates("Real Madrid",40.45306,-3.68835)
-    )
-
 }
-
-data class Coordinates(val team: String,val latitude : Double, val longitude: Double)

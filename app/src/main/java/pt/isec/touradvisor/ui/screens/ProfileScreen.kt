@@ -1,5 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -33,10 +36,13 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.firestore.GeoPoint
 import pt.isec.touradviser.R
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavController,
@@ -72,17 +78,37 @@ fun ProfileScreen(
                 items(items.value) { item ->
                     Card(
                         modifier = Modifier
-                            .padding(5.dp)
                             .fillMaxWidth()
-                            .height(150.dp)
+                            .padding(8.dp),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(128,224,255),
+                            contentColor = Color(0,0,128)
+                        ),
+                        onClick = {
+                            Log.d("POI", "Clicked on ${item.image.toString()}")
+                        }
                     ) {
-                        Column {
-                            item.toImage()
-                            Text(text = item.name.toString())
+                        Column(
+                            modifier = Modifier
+                                .width(150.dp)
+                                .padding(8.dp)
+                                .fillMaxHeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = item.name?:"", fontSize = 20.sp)
+                            Text(text = "${item.category?.nome}", fontSize = 14.sp)
+                            if (item.image != ""){
+                                Image(painter = item.toImage(), contentDescription = "POI Image")
+                            }
+                            else{
+                                Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "POI Image")
+                            }
                         }
                     }
                 }
             }
+            Text(text = "No more POIs to show", modifier = Modifier.align(alignment = Alignment.Center))
         }
     }
 }

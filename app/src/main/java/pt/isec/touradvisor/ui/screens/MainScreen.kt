@@ -96,7 +96,7 @@ fun MainScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             composable(Screens.LANDING.route) {
-                LandingScreen(navController = navController)
+                LandingScreen(navController = navController, firebaseViewModel = firebaseViewModel, locationViewModel = locationViewModel)
             }
             composable(Screens.HOME.route) {
                 HomeScreen(navController = navController ,locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel) {
@@ -112,7 +112,7 @@ fun MainScreen(
                 LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
             }
             composable(Screens.SETTINGS.route) {
-                SettingScreen(navController = navController)
+                SettingScreen(firebaseViewModel = firebaseViewModel)
             }
         }
 

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stadium
 import androidx.compose.material3.AlertDialog
@@ -78,10 +79,12 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import pt.isec.touradvisor.data.Category
+import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.utils.firebase.FStorageUtil.Companion.uploadFile
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,21 +96,9 @@ fun HomeScreen(
     navController: NavController?,
     onLogout: () -> Unit
 ) {
-    firebaseViewModel.startObserver();
-    firebaseViewModel.getUserPOIs()
+//    firebaseViewModel.startObserver();
+//    firebaseViewModel.getUserPOIs()
 
-//    @Composable
-//    fun YourScreen() {
-//        val data = viewModel.data.collectAsState(initial = Loading)
-//
-//        when (val result = data.value) {
-//            is Loading -> CircularProgressIndicator() // Display a loading indicator
-//            is Success -> DisplayData(result.data) // Display the data
-//            is Error -> Text("Error: ${result.exception.message}") // Display an error message
-//        }
-//    }
-
-    var autoEnabled by remember { mutableStateOf(false) }
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
         mutableStateOf(location?.let { GeoPoint(it.latitude, it.longitude) })
@@ -121,15 +112,20 @@ fun HomeScreen(
     }
     var userCode by remember { mutableStateOf("") }
     var searchTrue: Boolean by remember { mutableStateOf(false) }
-    val openDialog = remember { mutableStateOf(false) }
+    var openCardDialog by remember { mutableStateOf(false) }
     val poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
     val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
+    val locationsList by remember { mutableStateOf(firebaseViewModel.locations) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
-
-    if (autoEnabled) {
-        geoPoint = location?.let { GeoPoint(it.latitude, it.longitude) }
-        locationViewModel.stopLocationUpdates()
-    }
+    val orderBy = remember { mutableListOf(
+        "A-Z",
+        "Z-A",
+        "+ Distância",
+        "- Distância",
+        "Categoria"
+    ) }
+    var selectedSort by remember { mutableStateOf(orderBy[0]) }
+    var sortedPOIs by remember { mutableStateOf(firebaseViewModel.sortedPOIs) }
 
     LaunchedEffect(key1 = user){
         if (user == null){
@@ -213,17 +209,24 @@ fun HomeScreen(
                     .align(Alignment.BottomCenter),
             ){
                 AddButton( modifier = Modifier
-                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList, locationViewModel = locationViewModel)
+                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList, locations = locationsList, locationViewModel = locationViewModel)
+
         }
+        myLocButton(locationViewModel = locationViewModel, modifier = Modifier
+            .padding(end = 12.dp), onLoc = { mapCenter = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!! })
 
         }
         TabFilter(categoriesList) {
             selectedCategory = it
         }
+        Ordenacao(orderBy = orderBy, poisList = poisList, sortedPOIs = sortedPOIs, onOrder = {
+
+            Log.i("Map", poisList.toString())
+        })
         LazyRow(modifier = Modifier
             .fillMaxSize()
         ) {
-            items(poisList.value) {
+            items(sortedPOIs.value) {
                 if (selectedCategory == null || it.category == selectedCategory){
                     Card(
                         modifier = Modifier
@@ -237,6 +240,7 @@ fun HomeScreen(
                         onClick = {
                             geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
                             mapCenter = geoPoint
+                            openCardDialog = true
                             Log.i("Map", "Clicked on ${it.geoPoint?.latitude} ${it.geoPoint?.longitude}")
                         }
                     ) {
@@ -251,7 +255,11 @@ fun HomeScreen(
                             Text(text = "${it.category?.nome}", fontSize = 14.sp)
                             Image(painter = it.toImage(), contentDescription = "POI Image")
                             Text(text = it.geoPoint.toString(), fontSize = 14.sp)
+                            Text(text = "${it.description}", fontSize = 14.sp)
                         }
+                    }
+                    if (openCardDialog) {
+                        viewCard(poi = it, onDismiss = { openCardDialog = false })
                     }
                 }
             }
@@ -260,12 +268,45 @@ fun HomeScreen(
 }
 
 @Composable
+fun viewCard(
+    poi: POI,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .height(400.dp),
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = poi.name?:"", fontSize = 20.sp) },
+        text = {
+            Column {      //substituir por um switch case
+                Text(text = poi.description?:"", fontSize = 14.sp)
+                Text(text = poi.category?.nome?:"", fontSize = 14.sp)
+                Text(text = poi.location?.name?:"", fontSize = 14.sp)
+                Image(painter = poi.toImage(), contentDescription = "POI Image")
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                onDismiss()
+            }
+            ) {
+                Text(text = "Fechar")
+            }
+        },
+    )
+}
+
+
+@Composable
 fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
     AndroidView(
         factory = { context ->
             MapView(context).apply {
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
+                setBuiltInZoomControls(false)
                 controller.setZoom(18.0)
                 for (poi in poisList) {
                     overlays.add(
@@ -316,6 +357,46 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
 }
 
 @Composable
+fun Ordenacao(
+    modifier: Modifier = Modifier,
+    orderBy: List<String>,
+    poisList: MutableState<List<POI>>,
+    onOrder: (String) -> Unit,
+    sortedPOIs: MutableState<List<POI>>
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(orderBy[0]) }
+
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .height(50.dp)
+        .padding(2.dp)
+        .padding(start = 8.dp),
+        contentAlignment = Alignment.CenterStart) {
+        Text(text = selected, fontSize = 12.sp, modifier = Modifier
+            .clickable(onClick = { expanded = true })
+            .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
+            .padding(5.dp)
+            .fillMaxWidth(), color = Color.Black)
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            orderBy.forEach { s ->
+                DropdownMenuItem(onClick = {
+                    expanded = false
+                    selected = s
+                    onOrder(s)
+                    when (s) {
+                        "A-Z" -> sortedPOIs.value = poisList.value.sortedBy { it.name }
+                        "Z-A" -> sortedPOIs.value = poisList.value.sortedByDescending { it.name }
+                        "Categoria" -> sortedPOIs.value = poisList.value.sortedBy { it.category?.nome }
+                    }
+                    Log.i("ola", sortedPOIs.value.toString())
+                },text = { Text(s) })
+            }
+        }
+    }
+}
+
+@Composable
 fun TabFilter(
     categorias:MutableState<List<Category>>,
     modifier: Modifier = Modifier,
@@ -343,6 +424,7 @@ fun AddButton(
     modifier: Modifier = Modifier,
     firabaseViewModel: FirebaseViewModel,
     categorias:MutableState<List<Category>>,
+    locations:MutableState<List<Local>>,
     locationViewModel: LocationViewModel
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -408,13 +490,13 @@ fun AddButton(
                     Column {      //substituir por um switch case
 
                         if (tipo == "Localização") {
-                            data = dialogLocalização()
+                            data = dialogLocalizacao(locationViewModel)
                         }
                         if (tipo == "Categoria"){
                             data = dialogCategoria()
                         }
                         if (tipo == "Local de Interesse"){
-                            data = dialogLocalInteresse(categorias, firabaseViewModel, locationViewModel)
+                            data = dialogLocalInteresse(categorias, locations, firabaseViewModel, locationViewModel)
                         }
 
 
@@ -423,7 +505,7 @@ fun AddButton(
                 confirmButton = {
                     Button(onClick = {
                         if (tipo == "Localização") {
-                            firabaseViewModel.addPOIToFirestore(data)
+                            firabaseViewModel.addLocationToFirestore(data)
                         }
                         if (tipo == "Categoria"){
                             firabaseViewModel.addCategoryToFirestore(data)
@@ -450,8 +532,33 @@ fun AddButton(
 }
 
 @Composable
+fun myLocButton(
+    locationViewModel: LocationViewModel,
+    modifier: Modifier = Modifier,
+    onLoc: (GeoPoint) -> Unit
+){
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .height(450.dp)
+        .padding(end = 10.dp),
+    ) {
+        IconButton(
+            onClick = {
+                locationViewModel.currentLocation.value?.let { onLoc(GeoPoint(it.latitude, it.longitude)) }
+                      },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .background(Color(118, 156, 219, 149), CircleShape)
+        ) {
+            Icon(Icons.Default.MyLocation, contentDescription = "My location button")
+        }
+    }
+}
+
+@Composable
 fun dialogLocalInteresse(
     categorias: MutableState<List<Category>>,
+    locations: MutableState<List<Local>>,
     firebaseViewModel: FirebaseViewModel,
     locationViewModel: LocationViewModel
 ): HashMap<String, Any> {
@@ -461,9 +568,11 @@ fun dialogLocalInteresse(
     var latitude by remember { mutableDoubleStateOf(0.0) }
     var longitude by remember { mutableDoubleStateOf(0.0) }
     var selectedCategory by remember { mutableStateOf(categorias.value[0]) }
+    var selectedLocation by remember { mutableStateOf(locations.value[0]) }
     var geoPoint by remember { mutableStateOf(GeoPoint(0.0,0.0)) }
     var checkedLoc by remember { mutableStateOf(true) }
     var expandedCat by remember { mutableStateOf(false) }
+    var expandedLoc by remember { mutableStateOf(false) }
     var imagem by remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -498,7 +607,27 @@ fun dialogLocalInteresse(
             label = { Text("Longitude") }
         )
     }
+    Text(text = "Local:", fontSize = 13.sp)
+    Spacer(modifier = Modifier.height(3.dp))
+    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
 
+        Text(text = selectedLocation.name.toString(), fontSize = 16.sp, modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = { expandedLoc = true })
+            .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
+            .padding(18.dp))
+        DropdownMenu(expanded = expandedLoc, onDismissRequest = { expandedLoc = false }) {
+            locations.value.forEach { s ->
+                DropdownMenuItem(onClick = {
+                    expandedLoc = false
+                    selectedLocation = s
+                }, text = { s.name?.let { Text(it) } })
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = "Categoria:", fontSize = 13.sp)
+    Spacer(modifier = Modifier.height(3.dp))
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
         Text(text = selectedCategory.nome.toString(), fontSize = 16.sp, modifier = Modifier
             .fillMaxWidth()
@@ -517,12 +646,14 @@ fun dialogLocalInteresse(
     Spacer(modifier = Modifier.height(8.dp))
     UploadPhotoButton(onUriReady ={ imagem = it}, type = "poi", picName = nome)
     val db = Firebase.firestore
-    val docRef = db.collection("Categorias").document(selectedCategory.nome.toString())
+    val docRefCat = db.collection("Categorias").document(selectedCategory.nome.toString())
+    val docRefLoc = db.collection("Locais").document(selectedLocation.name.toString())
 
-    val data = hashMapOf<String,Any>(
+    val data = hashMapOf(
         "nome" to nome,
         "descricao" to descricao,
-        "categoria" to docRef,
+        "categoria" to docRefCat,
+        "location" to docRefLoc,
         "geoPoint" to geoPoint,
         "imagem" to imagem,
         "user" to firebaseViewModel.userUID.value!!
@@ -531,7 +662,9 @@ fun dialogLocalInteresse(
 }
 
 @Composable
-fun dialogCategoria(): HashMap<String, Any> {
+fun dialogCategoria(
+
+): HashMap<String, Any> {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var image by remember { mutableStateOf("") }
@@ -546,6 +679,7 @@ fun dialogCategoria(): HashMap<String, Any> {
         onValueChange = { description = it },
         label = { Text("Descrição") }
     )
+
     UploadPhotoButton(onUriReady ={ image = it}, type = "category", picName = name)
     val data = hashMapOf<String,Any>(
         "nome" to name,
@@ -557,15 +691,20 @@ fun dialogCategoria(): HashMap<String, Any> {
 }
 
 @Composable
-fun dialogLocalização(): HashMap<String, Any> {
-    var nome by remember { mutableStateOf("") }
+fun dialogLocalizacao(
+    locationViewModel: LocationViewModel
+): HashMap<String, Any> {
+    var name by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
-    var localizacao by remember { mutableStateOf("") }
-    var imagem by remember { mutableStateOf("") }
+    var image by remember { mutableStateOf("") }
+    var checkedLoc by remember { mutableStateOf(true) }
+    var latitude by remember { mutableDoubleStateOf(0.0) }
+    var longitude by remember { mutableDoubleStateOf(0.0) }
+    var geoPoint by remember { mutableStateOf(GeoPoint(0.0,0.0)) }
 
     OutlinedTextField(
-        value = nome,
-        onValueChange = { nome = it },
+        value = name,
+        onValueChange = { name = it },
         label = { Text("Nome") }
     )
     OutlinedTextField(
@@ -573,23 +712,30 @@ fun dialogLocalização(): HashMap<String, Any> {
         onValueChange = { descricao = it },
         label = { Text("Descrição") }
     )
-    OutlinedTextField(
-        value = localizacao,
-        onValueChange = { localizacao = it },
-        label = { Text("Coordenadas") }
-    )
-    OutlinedTextField(
-        value = imagem,
-        onValueChange = { imagem = it },
-        label = { Text("Imagem") }
-    )
-    UploadPhotoButton(onUriReady ={ imagem = it}, type = "poi", picName = nome)
+    Text(text = "Local atual?", fontSize = 13.sp)
+    Switch(checked = checkedLoc, onCheckedChange = {
+        checkedLoc = it
+    })
+    if (checkedLoc){
+        geoPoint = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
+    } else {
+        OutlinedTextField(
+            value = latitude.toString(),
+            onValueChange = { latitude = it.toDouble() },
+            label = { Text("Latitude") }
+        )
+        OutlinedTextField(
+            value = longitude.toString(),
+            onValueChange = { longitude = it.toDouble() },
+            label = { Text("Longitude") }
+        )
+    }
+    UploadPhotoButton(onUriReady ={ image = it}, type = "location", picName = name)
     val data = hashMapOf<String,Any>(
-        "nome" to nome,
+        "nome" to name,
         "descricao" to descricao,
-        "latitude" to 0,
-        "longitude" to 0,
-        "imagem" to "imagem"
+        "geopoint" to geoPoint,
+        "imagem" to image
     )
     return data
 }
