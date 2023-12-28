@@ -12,6 +12,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
@@ -91,9 +92,9 @@ class FStorageUtil {
                             GlobalScope.launch{
                                 querySnapshot.documents.forEach {
                                     val docRefCat = it.getDocumentReference("categoria")
-                                    val docRefLoc = it.getDocumentReference("localizacao")
-                                    val documentCat = docRefCat?.getSuspended()
-                                    val documentLoc = docRefLoc?.getSuspended()
+                                    val docRefLoc = it.getDocumentReference("location")
+                                    val documentCat = docRefCat?.get()?.await()
+                                    val documentLoc = docRefLoc?.get()?.await()
                                     val category = documentCat?.toObject(Category::class.java)
                                     val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
@@ -102,6 +103,8 @@ class FStorageUtil {
                                     val image = it.getString("imagem") ?: ""
 
                                     pois.add(POI(name, description, geoPoint, category,  location, image))
+                                    Log.i("LOCAL", location.toString())
+                                    Log.i("posis", category.toString())
                                 }
                                 checkAllListenersCompleted()
                             }
@@ -114,10 +117,10 @@ class FStorageUtil {
                         return@addSnapshotListener
                     } else {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
-                            querySnapshot.documents.forEach(){
+                            querySnapshot.documents.forEach {
                                 val name = it.getString("nome") ?: ""
                                 val description = it.getString("descricao") ?: ""
-                                val geoPoint = it.getGeoPoint("geoPoint")
+                                val geoPoint = it.getGeoPoint("geopoint")
                                 val image = it.getString("imagem") ?: ""
                                 locations.add(Local(name, description, image, geoPoint))
                             }
@@ -152,9 +155,9 @@ class FStorageUtil {
                             GlobalScope.launch {
                                 querySnapshot.documents.forEach {
                                     val docRefCat = it.getDocumentReference("categoria")
-                                    val docRefLoc = it.getDocumentReference("localizacao")
-                                    val documentCat = docRefCat?.getSuspended()
-                                    val documentLoc = docRefLoc?.getSuspended()
+                                    val docRefLoc = it.getDocumentReference("location")
+                                    val documentCat = docRefCat?.get()?.await()
+                                    val documentLoc = docRefLoc?.get()?.await()
                                     val category = documentCat?.toObject(Category::class.java)
                                     val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
@@ -162,11 +165,10 @@ class FStorageUtil {
                                     val geoPoint = it.getGeoPoint("geoPoint")
                                     val image = it.getString("imagem") ?: ""
                                     val nuser = it.getString("user") ?: ""
-                                    Log.i("POISaaaaaaaaaa", nuser)
                                     if (nuser == user){
-                                        Log.i("POISaaaaaaaaaa", "entrou")
                                         pois.add(POI(name, description, geoPoint, category, location, image, nuser))
-                                        Log.i("POISaded", pois.toString())
+                                        Log.i("LOCAL12", location.toString())
+                                        Log.i("posis", category.toString())
                                     }
                                 }
                                 Log.i("POIS", pois.toString())

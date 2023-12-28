@@ -19,6 +19,7 @@ import pt.isec.touradvisor.ui.theme.TourAdvisorTheme
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModelFactory
+import pt.isec.touradvisor.ui.viewmodels.SearchHistoryViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -27,12 +28,13 @@ class MainActivity : ComponentActivity() {
         LocationViewModelFactory(app.locationHandler)
     }
     private val firebaseViewModel: FirebaseViewModel by viewModels()
+    private val searchHistoryViewModel: SearchHistoryViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(this, getSharedPreferences("OSM", MODE_PRIVATE))
         setContent {
             TourAdvisorTheme {
-                MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel)
+                MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel, searchHistoryViewModel = searchHistoryViewModel )
             }
         }
         verifyPermissions()

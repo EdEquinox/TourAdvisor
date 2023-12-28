@@ -22,6 +22,9 @@ import kotlin.coroutines.suspendCoroutine
 
 class FirebaseViewModel : ViewModel() {
 
+    private val _sortedLocal = mutableStateOf(listOf<Local>())
+    val sortedLocal: MutableState<List<Local>>
+        get() = _sortedLocal
     private val _user = mutableStateOf(FAuthUtil.currentUser?.toUser())
     val user : MutableState<User?>
         get() = _user
@@ -120,11 +123,16 @@ class FirebaseViewModel : ViewModel() {
     suspend fun startObserver() : Boolean {
         return suspendCoroutine { continuation ->
             FStorageUtil.startObserver(onNewValues = { c, p, l ->
-                _categories.value = c
-                _POIs.value = p
-                _locations.value = l
+                try {
+                    _categories.value = c
+                    _POIs.value = p
+                    _locations.value = l
+                    _sortedLocal.value = l
+                    continuation.resume(true)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }, onReady = {
-                continuation.resume(true)
             })
         }
 
@@ -134,9 +142,13 @@ class FirebaseViewModel : ViewModel() {
         return suspendCoroutine { continuation ->
             userUID.value?.let {
                 FStorageUtil.getUserPOIS(it) { pois->
-                    myPOIs.value = pois
-                    sortedPOIs.value = pois
-                    continuation.resume(pois)
+                    try {
+                        myPOIs.value = pois
+                        sortedPOIs.value = pois
+                        continuation.resume(pois)
+                    } catch (e: Exception) {
+                       e.printStackTrace()
+                    }
                 }
             }
         }

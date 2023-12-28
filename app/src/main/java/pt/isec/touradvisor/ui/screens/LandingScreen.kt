@@ -31,7 +31,6 @@ fun LandingScreen(
     locationViewModel: LocationViewModel
 ) {
 
-//    locationViewModel.startLocationUpdates()
 
     val infiniteTransition = rememberInfiniteTransition(label = "animation")
     val scale by infiniteTransition.animateFloat(

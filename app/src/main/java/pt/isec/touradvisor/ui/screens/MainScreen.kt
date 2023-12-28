@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
+import pt.isec.touradvisor.ui.viewmodels.SearchHistoryViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +37,8 @@ import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 fun MainScreen(
     navController: NavHostController = rememberNavController(),
     locationViewModel: LocationViewModel,
-    firebaseViewModel: FirebaseViewModel
+    firebaseViewModel: FirebaseViewModel,
+    searchHistoryViewModel: SearchHistoryViewModel
 ) {
 
     var showSettingsAction by remember { mutableStateOf(false) }
@@ -99,7 +101,7 @@ fun MainScreen(
                 LandingScreen(navController = navController, firebaseViewModel = firebaseViewModel, locationViewModel = locationViewModel)
             }
             composable(Screens.HOME.route) {
-                HomeScreen(navController = navController ,locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel) {
+                HomeScreen(navController = navController ,locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel, searchHistoryViewModel = searchHistoryViewModel  ) {
                     navController.navigate(
                         Screens.LOGIN.route
                     )

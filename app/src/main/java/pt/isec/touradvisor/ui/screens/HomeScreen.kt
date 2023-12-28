@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stadium
@@ -56,8 +59,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,9 +84,8 @@ import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
+import pt.isec.touradvisor.ui.viewmodels.SearchHistoryViewModel
 import pt.isec.touradvisor.utils.firebase.FStorageUtil.Companion.uploadFile
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,11 +93,10 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     locationViewModel: LocationViewModel,
     firebaseViewModel: FirebaseViewModel,
+    searchHistoryViewModel: SearchHistoryViewModel,
     navController: NavController?,
     onLogout: () -> Unit
 ) {
-//    firebaseViewModel.startObserver();
-//    firebaseViewModel.getUserPOIs()
 
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
@@ -107,13 +106,11 @@ fun HomeScreen(
     var mapCenter by remember { mutableStateOf(geoPoint) }
     var query by remember { mutableStateOf("") }
     var active by remember { mutableStateOf(false) }
-    var searchHistory = remember{
-        mutableStateListOf("ola", "ole", "oli")
-    }
-    var userCode by remember { mutableStateOf("") }
+    var searchHistory by remember{ mutableStateOf(searchHistoryViewModel.searchHistory)}
     var searchTrue: Boolean by remember { mutableStateOf(false) }
     var openCardDialog by remember { mutableStateOf(false) }
-    val poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
+    var poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
+    var selectedLocal by remember { mutableStateOf(firebaseViewModel.locations.value[0]) }
     val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
     val locationsList by remember { mutableStateOf(firebaseViewModel.locations) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
@@ -121,11 +118,11 @@ fun HomeScreen(
         "A-Z",
         "Z-A",
         "+ Distância",
-        "- Distância",
-        "Categoria"
+        "- Distância"
     ) }
-    var selectedSort by remember { mutableStateOf(orderBy[0]) }
-    var sortedPOIs by remember { mutableStateOf(firebaseViewModel.sortedPOIs) }
+    var searchList by remember { mutableStateOf(firebaseViewModel.POIs) }
+    var sortedLocal by remember { mutableStateOf(firebaseViewModel.sortedLocal) }
+    var categoriaDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = user){
         if (user == null){
@@ -146,7 +143,16 @@ fun HomeScreen(
             SearchBar(
                 query = query,
                 onQueryChange = { query = it },
-                onSearch = { active = false },
+                onSearch = {
+                    searchList = poisList
+                    Log.i("Map", searchList.value.toString())
+                    Log.i("Map", poisList.value.toString())
+                    active = false
+                    searchTrue = true
+                    searchHistoryViewModel.addSearch(query)
+                    searchList.value = searchList.value.filter { it.name?.contains(query, ignoreCase = true) == true }
+                    Log.i("Map", searchList.value.toString())
+                },
                 active = active,
                 onActiveChange = { active = it },
                 placeholder = { Text(text = "Procurar") },
@@ -202,90 +208,171 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(8.dp)
                     )
-            MapViewComposable(mapCenter = mapCenter, poisList = poisList.value)
+            MapViewComposable(mapCenter = mapCenter, poisList = poisList.value, selecedLocal = selectedLocal)
             Row(
                 modifier
                     .zIndex(1f)
                     .align(Alignment.BottomCenter),
             ){
-                AddButton( modifier = Modifier
-                    .align(Alignment.CenterVertically), firabaseViewModel = firebaseViewModel, categorias = categoriesList, locations = locationsList, locationViewModel = locationViewModel)
+                AddButton(
+                    firabaseViewModel = firebaseViewModel,
+                    categorias = categoriesList,
+                    locations = locationsList,
+                    locationViewModel = locationViewModel
+                )
 
         }
-        myLocButton(locationViewModel = locationViewModel, modifier = Modifier
-            .padding(end = 12.dp), onLoc = { mapCenter = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!! })
-
+        MyLocButton(
+            locationViewModel = locationViewModel
+        ) {
+            mapCenter = it
+            Log.i("Map", locationViewModel.currentLocation.value.toString())
+        }
         }
         TabFilter(categoriesList) {
             selectedCategory = it
+            categoriaDialog = true
         }
-        Ordenacao(orderBy = orderBy, poisList = poisList, sortedPOIs = sortedPOIs, onOrder = {
-
-            Log.i("Map", poisList.toString())
-        })
+        if (categoriaDialog) {
+            ViewFilter(poisList = poisList, category = selectedCategory?.nome?:"", onDismiss = { categoriaDialog = false })
+        }
+        Ordenacao(
+            orderBy = orderBy,
+            localtionList = locationsList,
+            sortedLocal = sortedLocal,
+            locationViewModel = locationViewModel
+        )
         LazyRow(modifier = Modifier
             .fillMaxSize()
         ) {
-            items(sortedPOIs.value) {
-                if (selectedCategory == null || it.category == selectedCategory){
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        elevation = CardDefaults.cardElevation(4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(128,224,255),
-                            contentColor = Color(0,0,128)
-                        ),
-                        onClick = {
-                            geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
-                            mapCenter = geoPoint
-                            openCardDialog = true
-                            Log.i("Map", "Clicked on ${it.geoPoint?.latitude} ${it.geoPoint?.longitude}")
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .padding(8.dp)
-                                .fillMaxHeight(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = it.name?:"", fontSize = 20.sp)
-                            Text(text = "${it.category?.nome}", fontSize = 14.sp)
-                            Image(painter = it.toImage(), contentDescription = "POI Image")
-                            Text(text = it.geoPoint.toString(), fontSize = 14.sp)
-                            Text(text = "${it.description}", fontSize = 14.sp)
-                        }
-                    }
-                    if (openCardDialog) {
-                        viewCard(poi = it, onDismiss = { openCardDialog = false })
-                    }
+            items(sortedLocal.value) {
+                if (sortedLocal.value.isEmpty()){
+                    sortedLocal.value = locationsList.value
                 }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(128,224,255),
+                        contentColor = Color(0,0,128)
+                    ),
+                    onClick = {
+                        geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
+                        mapCenter = geoPoint
+                        openCardDialog = true
+                        selectedLocal = it
+                        Log.i("Msadsaap", "Clicked on ${it.name} ${it.image.toString()}")
+                    }
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .padding(8.dp)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        content = {
+                            item {
+                                Row (
+                                    modifier = Modifier.fillMaxWidth()
+                                ){
+                                    Text(text = it.name?:"", fontSize = 20.sp)
+                                    Icon(imageVector = Icons.Default.LocationCity, contentDescription = "Location Icon")
+                                }
+                                Spacer(modifier = Modifier
+                                    .height(8.dp)
+                                    .background(Color(0, 0, 0, 0)))
+                                Text(text = "${it.description}", fontSize = 14.sp, modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(100.dp))
+                                Image(painter = it.toImage(), contentDescription = "Filter Image")                            }
+                        }
+                    )
+                }
+
             }
         }
+    }
+    if (openCardDialog) {
+        ViewLocation(location = selectedLocal, onDismiss = { openCardDialog = false }, poisList = poisList.value)
     }
 }
 
 @Composable
-fun viewCard(
-    poi: POI,
+fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>) {
+    AlertDialog(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = location.name?:"", fontSize = 20.sp) },
+        text = {
+            LazyColumn(content = {
+                item {
+                    Text(text = location.description?:"", fontSize = 14.sp)
+                    Image(painter = location.toImage(), contentDescription = "POI Image", modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp))
+                }
+                poisList.forEach {
+                    Log.i("Mapsadasw2dasds", it.location?.name?:"")
+                        item {
+                            if (it.location?.name == location.name){
+                                Text(text = it.name?:"", fontSize = 14.sp)
+                                Log.i("Mapsadasdasds", it.name?:"")
+                            }
+                    }
+                }
+            })
+        },
+        confirmButton = {
+            Button(onClick = {
+                onDismiss()
+            }
+            ) {
+                Text(text = "Fechar")
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ViewFilter(
+    poisList: MutableState<List<POI>>,
+    category: String,
     onDismiss: () -> Unit
-) {
+)
+{
+    poisList.value.filter{ it.category?.nome == category }
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .height(400.dp),
         onDismissRequest = { onDismiss() },
-        title = { Text(text = poi.name?:"", fontSize = 20.sp) },
+        title = { Text(text = category, fontSize = 20.sp) },
         text = {
-            Column {      //substituir por um switch case
-                Text(text = poi.description?:"", fontSize = 14.sp)
-                Text(text = poi.category?.nome?:"", fontSize = 14.sp)
-                Text(text = poi.location?.name?:"", fontSize = 14.sp)
-                Image(painter = poi.toImage(), contentDescription = "POI Image")
-            }
+            LazyVerticalGrid(columns = GridCells.Fixed(3), content = {
+                poisList.value.forEach {
+                    item {
+                        if (it.category?.nome == category){
+                            Card(onClick = {
+                                onDismiss()
+                            }, content = {
+                                Column {
+                                    Text(text = it.name?:"", fontSize = 14.sp)
+                                    Image(painter = it.toImage(), contentDescription = "POI Image", modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp))
+                                }
+                            })
+                        }
+                    }
+                }
+            })
         },
         confirmButton = {
             Button(onClick = {
@@ -300,14 +387,14 @@ fun viewCard(
 
 
 @Composable
-fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
+fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>, selecedLocal: Local) {
     AndroidView(
         factory = { context ->
             MapView(context).apply {
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
                 setBuiltInZoomControls(false)
-                controller.setZoom(18.0)
+                controller.setZoom(15.0)
                 for (poi in poisList) {
                     overlays.add(
                         Marker(this).apply {
@@ -327,19 +414,21 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
         }, update = { mapView ->
             mapView.overlays.clear()
             for (poi in poisList) {
-                mapView.overlays.add(
-                    Marker(mapView).apply {
-                        position =
-                            poi.geoPoint?.let {
-                                org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude)
-                            }
-                        title = poi.name
-                        setAnchor(
-                            Marker.ANCHOR_CENTER,
-                            Marker.ANCHOR_BOTTOM
-                        )
-                    }
-                )
+                if (poi.location?.name == selecedLocal.name){
+                    mapView.overlays.add(
+                        Marker(mapView).apply {
+                            position =
+                                poi.geoPoint?.let {
+                                    org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude)
+                                }
+                            title = poi.name
+                            setAnchor(
+                                Marker.ANCHOR_CENTER,
+                                Marker.ANCHOR_BOTTOM
+                            )
+                        }
+                    )
+                }
             }
             mapCenter?.let {
                 mapView.controller.animateTo(
@@ -358,11 +447,10 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>) {
 
 @Composable
 fun Ordenacao(
-    modifier: Modifier = Modifier,
     orderBy: List<String>,
-    poisList: MutableState<List<POI>>,
-    onOrder: (String) -> Unit,
-    sortedPOIs: MutableState<List<POI>>
+    localtionList: MutableState<List<Local>>,
+    sortedLocal: MutableState<List<Local>>,
+    locationViewModel: LocationViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(orderBy[0]) }
@@ -383,13 +471,13 @@ fun Ordenacao(
                 DropdownMenuItem(onClick = {
                     expanded = false
                     selected = s
-                    onOrder(s)
                     when (s) {
-                        "A-Z" -> sortedPOIs.value = poisList.value.sortedBy { it.name }
-                        "Z-A" -> sortedPOIs.value = poisList.value.sortedByDescending { it.name }
-                        "Categoria" -> sortedPOIs.value = poisList.value.sortedBy { it.category?.nome }
+                        "- Distância" -> sortedLocal.value = localtionList.value.sortedByDescending { locationViewModel.calculateDistance(GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)) }
+                        "+ Distância" -> sortedLocal.value = localtionList.value.sortedBy { locationViewModel.calculateDistance(GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)) }
+                        "A-Z" -> sortedLocal.value = localtionList.value.sortedBy { it.name }
+                        "Z-A" -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
                     }
-                    Log.i("ola", sortedPOIs.value.toString())
+                    Log.i("ola", sortedLocal.value.toString())
                 },text = { Text(s) })
             }
         }
@@ -421,10 +509,9 @@ fun TabFilter(
 
 @Composable
 fun AddButton(
-    modifier: Modifier = Modifier,
     firabaseViewModel: FirebaseViewModel,
-    categorias:MutableState<List<Category>>,
-    locations:MutableState<List<Local>>,
+    categorias: MutableState<List<Category>>,
+    locations: MutableState<List<Local>>,
     locationViewModel: LocationViewModel
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -532,10 +619,9 @@ fun AddButton(
 }
 
 @Composable
-fun myLocButton(
+fun MyLocButton(
     locationViewModel: LocationViewModel,
-    modifier: Modifier = Modifier,
-    onLoc: (GeoPoint) -> Unit
+    onLoc: (GeoPoint) -> Unit,
 ){
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -544,7 +630,10 @@ fun myLocButton(
     ) {
         IconButton(
             onClick = {
-                locationViewModel.currentLocation.value?.let { onLoc(GeoPoint(it.latitude, it.longitude)) }
+                locationViewModel.currentLocation.value?.let {
+                    val geoPoint = GeoPoint(it.latitude, it.longitude)
+                    onLoc(geoPoint)
+                }
                       },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -569,7 +658,7 @@ fun dialogLocalInteresse(
     var longitude by remember { mutableDoubleStateOf(0.0) }
     var selectedCategory by remember { mutableStateOf(categorias.value[0]) }
     var selectedLocation by remember { mutableStateOf(locations.value[0]) }
-    var geoPoint by remember { mutableStateOf(GeoPoint(0.0,0.0)) }
+    var geoPoint by remember { mutableStateOf(GeoPoint(0.0, 0.0)) }
     var checkedLoc by remember { mutableStateOf(true) }
     var expandedCat by remember { mutableStateOf(false) }
     var expandedLoc by remember { mutableStateOf(false) }
@@ -583,7 +672,7 @@ fun dialogLocalInteresse(
     OutlinedTextField(
         value = descricao,
         onValueChange = { descricao = it },
-        label = { Text("Descrição")},
+        label = { Text("Descrição") },
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
@@ -593,8 +682,9 @@ fun dialogLocalInteresse(
     Switch(checked = checkedLoc, onCheckedChange = {
         checkedLoc = it
     })
-    if (checkedLoc){
-        geoPoint = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
+    if (checkedLoc) {
+        geoPoint =
+            locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
     } else {
         OutlinedTextField(
             value = latitude.toString(),
@@ -611,11 +701,13 @@ fun dialogLocalInteresse(
     Spacer(modifier = Modifier.height(3.dp))
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
 
-        Text(text = selectedLocation.name.toString(), fontSize = 16.sp, modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = { expandedLoc = true })
-            .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
-            .padding(18.dp))
+        Text(
+            text = selectedLocation.name.toString(), fontSize = 16.sp, modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = { expandedLoc = true })
+                .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
+                .padding(18.dp)
+        )
         DropdownMenu(expanded = expandedLoc, onDismissRequest = { expandedLoc = false }) {
             locations.value.forEach { s ->
                 DropdownMenuItem(onClick = {
@@ -629,11 +721,13 @@ fun dialogLocalInteresse(
     Text(text = "Categoria:", fontSize = 13.sp)
     Spacer(modifier = Modifier.height(3.dp))
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-        Text(text = selectedCategory.nome.toString(), fontSize = 16.sp, modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = { expandedCat = true })
-            .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
-            .padding(18.dp))
+        Text(
+            text = selectedCategory.nome.toString(), fontSize = 16.sp, modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = { expandedCat = true })
+                .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
+                .padding(18.dp)
+        )
         DropdownMenu(expanded = expandedCat, onDismissRequest = { expandedCat = false }) {
             categorias.value.forEach { s ->
                 DropdownMenuItem(onClick = {
@@ -644,12 +738,12 @@ fun dialogLocalInteresse(
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
-    UploadPhotoButton(onUriReady ={ imagem = it}, type = "poi", picName = nome)
+    UploadPhotoButton(onUriReady = { imagem = it }, type = "poi", picName = nome)
     val db = Firebase.firestore
     val docRefCat = db.collection("Categorias").document(selectedCategory.nome.toString())
     val docRefLoc = db.collection("Locais").document(selectedLocation.name.toString())
 
-    val data = hashMapOf(
+    return hashMapOf(
         "nome" to nome,
         "descricao" to descricao,
         "categoria" to docRefCat,
@@ -658,13 +752,10 @@ fun dialogLocalInteresse(
         "imagem" to imagem,
         "user" to firebaseViewModel.userUID.value!!
     )
-    return data
 }
 
 @Composable
-fun dialogCategoria(
-
-): HashMap<String, Any> {
+fun dialogCategoria(): HashMap<String, Any> {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var image by remember { mutableStateOf("") }
@@ -680,13 +771,12 @@ fun dialogCategoria(
         label = { Text("Descrição") }
     )
 
-    UploadPhotoButton(onUriReady ={ image = it}, type = "category", picName = name)
-    val data = hashMapOf<String,Any>(
+    UploadPhotoButton(onUriReady = { image = it }, type = "category", picName = name)
+    return hashMapOf(
         "nome" to name,
         "descricao" to description,
         "imagem" to image
     )
-    return data
 
 }
 
@@ -700,7 +790,7 @@ fun dialogLocalizacao(
     var checkedLoc by remember { mutableStateOf(true) }
     var latitude by remember { mutableDoubleStateOf(0.0) }
     var longitude by remember { mutableDoubleStateOf(0.0) }
-    var geoPoint by remember { mutableStateOf(GeoPoint(0.0,0.0)) }
+    var geoPoint by remember { mutableStateOf(GeoPoint(0.0, 0.0)) }
 
     OutlinedTextField(
         value = name,
@@ -716,8 +806,9 @@ fun dialogLocalizacao(
     Switch(checked = checkedLoc, onCheckedChange = {
         checkedLoc = it
     })
-    if (checkedLoc){
-        geoPoint = locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
+    if (checkedLoc) {
+        geoPoint =
+            locationViewModel.currentLocation.value?.let { GeoPoint(it.latitude, it.longitude) }!!
     } else {
         OutlinedTextField(
             value = latitude.toString(),
@@ -730,14 +821,13 @@ fun dialogLocalizacao(
             label = { Text("Longitude") }
         )
     }
-    UploadPhotoButton(onUriReady ={ image = it}, type = "location", picName = name)
-    val data = hashMapOf<String,Any>(
+    UploadPhotoButton(onUriReady = { image = it }, type = "location", picName = name)
+    return hashMapOf(
         "nome" to name,
         "descricao" to descricao,
         "geopoint" to geoPoint,
         "imagem" to image
     )
-    return data
 }
 
 @Composable
