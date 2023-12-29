@@ -1,15 +1,11 @@
 package pt.isec.touradvisor.ui.viewmodels
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
@@ -45,6 +41,10 @@ class FirebaseViewModel : ViewModel() {
     private val _sortedPOIs = mutableStateOf(listOf<POI>())
     val sortedPOIs : MutableState<List<POI>>
         get() = _sortedPOIs
+
+    private val _myRatings = mutableStateOf(listOf<Avaliacao>())
+    val myRatings : MutableState<List<Avaliacao>>
+        get() = _myRatings
 
     fun createUserWithEmail(email: String, password: String) {
         if (email.isBlank() || password.isBlank())
@@ -89,6 +89,10 @@ class FirebaseViewModel : ViewModel() {
     val locations : MutableState<List<Local>>
         get() = _locations
 
+    private val _myPfp = mutableStateOf("")
+    val myPfp : MutableState<String>
+        get() = _myPfp
+
     fun addPOIToFirestore(data: HashMap<String,Any>) {
         viewModelScope.launch {
             FStorageUtil.addPOIToFirestore(data) { exception ->
@@ -112,10 +116,10 @@ class FirebaseViewModel : ViewModel() {
             }
         }
     }
-    
-    fun removeDataFromFirestore() {
+
+    fun addPFPToFirestore(user: String, newPFP: String) {
         viewModelScope.launch {
-            FStorageUtil.removeDataFromFirestore { exception ->
+            FStorageUtil.addPFPToFirestore(user,newPFP) { exception ->
                 _error.value = exception?.message
             }
         }
@@ -154,6 +158,33 @@ class FirebaseViewModel : ViewModel() {
             }
         }
     }
+
+    suspend fun getUserPFP(user: String) {
+        return suspendCoroutine {
+            FStorageUtil.getUserPfp(user) { pfp ->
+                try {
+                    myPfp.value = pfp
+                    Log.i("PFP", myPfp.value)
+                    it.resume(Unit)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    suspend fun getUserRatings(user: String) {
+        return suspendCoroutine {
+            FStorageUtil.getUserRatings(user) { ratings ->
+                try {
+                    myRatings.value = ratings
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
 
     fun stopObserver() {
         viewModelScope.launch {
@@ -200,5 +231,13 @@ class FirebaseViewModel : ViewModel() {
             }
         }
 
+    }
+
+    fun removePoiFromFirestore(name: String) {
+        viewModelScope.launch {
+            FStorageUtil.removePoiFromFirestore(name) { exception ->
+                _error.value = exception?.message
+            }
+        }
     }
 }

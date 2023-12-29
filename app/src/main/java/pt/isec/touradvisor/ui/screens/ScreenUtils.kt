@@ -677,11 +677,12 @@ fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: Strin
 }
 
 @Composable
-fun ViewPOI(poi: POI , onDismiss: () -> Unit, own : Boolean = false, onSelect : (HashMap<String, Any>) -> Unit, firebaseViewModel: FirebaseViewModel){
+fun ViewPOI(poi: POI , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) -> Unit, firebaseViewModel: FirebaseViewModel){
     var comment by remember { mutableStateOf("") }
     var stars by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     var data = hashMapOf<String,Any>()
+    val own by remember { mutableStateOf(poi.user == firebaseViewModel.userUID.value) }
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
@@ -695,23 +696,25 @@ fun ViewPOI(poi: POI , onDismiss: () -> Unit, own : Boolean = false, onSelect : 
                     Image(painter = poi.toImage(), contentDescription = "POI Image", modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp))
-                    OutlinedTextField(
-                        value = comment,
-                        onValueChange = { comment = it },
-                        label = { Text("Comentário") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                    )
-                    Row {
-                        for (i in 1..3) {
-                            IconButton(onClick = {
-                                stars = i
-                            }) {
-                                if (i <= stars) {
-                                    Icon(Icons.Default.Star, contentDescription = "Star")
-                                } else {
-                                    Icon(Icons.Default.StarOutline, contentDescription = "Star")
+                    if (!own){
+                        OutlinedTextField(
+                            value = comment,
+                            onValueChange = { comment = it },
+                            label = { Text("Comentário") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                        )
+                        Row {
+                            for (i in 1..3) {
+                                IconButton(onClick = {
+                                    stars = i
+                                }) {
+                                    if (i <= stars) {
+                                        Icon(Icons.Default.Star, contentDescription = "Star")
+                                    } else {
+                                        Icon(Icons.Default.StarOutline, contentDescription = "Star")
+                                    }
                                 }
                             }
                         }
@@ -734,16 +737,25 @@ fun ViewPOI(poi: POI , onDismiss: () -> Unit, own : Boolean = false, onSelect : 
             }
         },
         confirmButton = {
-            Button(onClick = {
-                if (data["comment"] != "" && data["rating"] != 0){
-                    onSelect(data)
-                } else {
-                    Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+            if (own){
+                Button(onClick = {
+                    firebaseViewModel.removePoiFromFirestore(poi.name!!)
+                    onDismiss()
+                }) {
+                    Text(text = "Remover")
+                }
+            } else{
+                Button(onClick = {
+                    if (data["comment"] != "" && data["rating"] != 0){
+                        onSelect(data)
+                    } else {
+                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Text(text = "Avaliar")
                 }
             }
-            ) {
-                Text(text = "Avaliar")
-            }
+
         },
     )
 }

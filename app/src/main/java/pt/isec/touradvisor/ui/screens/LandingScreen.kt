@@ -1,5 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -59,6 +60,10 @@ fun LandingScreen(
         locationViewModel.startLocationUpdates()
         firebaseViewModel.startObserver()
         firebaseViewModel.getUserPOIs()
+        firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
+        Log.i("PFP", firebaseViewModel.myPfp.value)
+//        firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value?:"")
+//        Log.i("rating", firebaseViewModel.myRatings.value.toString())
         navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
     }
 

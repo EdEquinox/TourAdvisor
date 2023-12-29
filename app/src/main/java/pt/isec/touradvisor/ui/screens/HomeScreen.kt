@@ -3,6 +3,7 @@ package pt.isec.touradvisor.ui.screens
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
@@ -42,12 +44,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
 import com.google.firebase.firestore.GeoPoint
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
@@ -66,6 +72,7 @@ fun HomeScreen(
     navController: NavController?,
     onLogout: () -> Unit
 ) {
+
 
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
@@ -95,6 +102,7 @@ fun HomeScreen(
     var openPOIdialog by remember { mutableStateOf(false) }
     var selectedPOI by remember { mutableStateOf(firebaseViewModel.POIs.value[0]) }
     var avaliacao:Avaliacao? by remember { mutableStateOf(null) }
+    var pfp by remember { mutableStateOf(firebaseViewModel.myPfp) }
 
     LaunchedEffect(key1 = user){
         if (user == null){
@@ -139,15 +147,29 @@ fun HomeScreen(
                             active = false })
                     }
                     else {
+                        if (firebaseViewModel.myPfp.value != ""){
+                            Box(modifier = Modifier.border(2.dp, Color.White, CircleShape)
+                                .size(40.dp)){
+                                Image(
+                                    painter = rememberImagePainter(data = pfp.value),
+                                    contentDescription = "pfp",
+                                    modifier = Modifier
+                                        .clickable {
+                                            firebaseViewModel.stopObserver()
+                                            navController?.navigate(Screens.PROFILE.route)
+                                        }.clip(CircleShape).fillMaxSize(),
+                                    contentScale = ContentScale.Crop)
+                            }
+                        }
+                    else {
                         Icon(
-                            imageVector = Icons.Default.AccountCircle, //TODO: Change to profile pic
-                            contentDescription = "Profile Icon",
-                            modifier = Modifier
-                                .clickable {
-                                    firebaseViewModel.stopObserver()
-                                    navController?.navigate(Screens.PROFILE.route)
-                                }
-                                .size(40.dp))
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Account Icon",
+                            modifier = Modifier.clickable {
+                                firebaseViewModel.stopObserver()
+                                navController?.navigate(Screens.PROFILE.route)
+                            })
+                        }
                     }
                 },
                 content = {

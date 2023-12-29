@@ -25,14 +25,6 @@ import kotlin.coroutines.resumeWithException
 class FStorageUtil {
     companion object {
 
-        fun removeDataFromFirestore(onResult: (Throwable?) -> Unit) {
-            val db = Firebase.firestore
-            val v = db.collection("Scores").document("Level1")
-
-            v.delete()
-                .addOnCompleteListener { onResult(it.exception) }
-        }
-
         private var listenerRegistrationCategorias: ListenerRegistration? = null
         private var listenerRegistrationPOIs: ListenerRegistration? = null
         private var listenerRegistrationLocations: ListenerRegistration? = null
@@ -135,15 +127,6 @@ class FStorageUtil {
         fun getUserPOIS(user: String, onNewValues: (MutableList<POI>) -> Unit) {
             val db = Firebase.firestore
             val pois = mutableListOf<POI>()
-
-            suspend fun DocumentReference.getSuspended(): DocumentSnapshot? =
-                suspendCancellableCoroutine { continuation ->
-                    this.get().addOnSuccessListener { document ->
-                        continuation.resume(document)
-                    }.addOnFailureListener { e ->
-                        continuation.resumeWithException(e)
-                    }
-                }
 
             db.collection("POI")
                 .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
@@ -266,6 +249,68 @@ class FStorageUtil {
                 .addOnCompleteListener{result ->
                     onResult(result.exception)
                 }
+        }
+
+        fun addPFPToFirestore(user: String, newPFP: String, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            db.collection("Users").document(user).set(hashMapOf("pfp" to newPFP))
+                .addOnCompleteListener { result ->
+                    Log.d("TAG", "DocumentSnapshot added with ID: ${result.result}")
+                }
+        }
+
+        fun getUserRatings(user: String, onNewValues: (MutableList<Avaliacao>) -> Unit) {
+            val db = Firebase.firestore
+            val ratings = mutableListOf<Avaliacao>()
+
+            db.collection("Avaliacoes")
+                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
+                        return@addSnapshotListener
+                    } else {
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            GlobalScope.launch {
+                                querySnapshot.documents.forEach {
+                                    val poi = it.getString("poi") ?: ""
+                                    val userRat = it.getString("user") ?: ""
+                                    val rating = it.getDouble("rating") ?: 0.0
+                                    val comment = it.getString("comment") ?: ""
+                                    if (userRat == user){
+                                        ratings.add(Avaliacao(comment, rating.toInt(), userRat, poi))
+                                    }
+                                }
+                                onNewValues(ratings)
+                            }
+                        }
+                    }
+                }
+        }
+
+        @OptIn(DelicateCoroutinesApi::class)
+        fun getUserPfp(user: String, onNewValues: (String) -> Unit) {
+            val db = Firebase.firestore
+
+            db.collection("Users").document(user)
+                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                    if (firebaseFirestoreException != null) {
+                        return@addSnapshotListener
+                    } else {
+                        if (querySnapshot != null) {
+                            GlobalScope.launch {
+                                val pfp = querySnapshot.getString("pfp") ?: ""
+                                onNewValues(pfp)
+                            }
+                        }
+                    }
+                }
+        }
+
+        fun removePoiFromFirestore(name: String, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            val v = db.collection("POI").document(name)
+
+            v.delete()
+                .addOnCompleteListener { onResult(it.exception) }
         }
 
     }

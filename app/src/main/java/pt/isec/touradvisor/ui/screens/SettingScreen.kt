@@ -319,18 +319,18 @@ fun ChangePFP(
     onDismissRequest: () -> Unit
 ) {
     var newPFP by remember { mutableStateOf("") }
-    var user = firebaseViewModel.user.value
+    var user = firebaseViewModel.userUID.value
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
         title = { Text(text = "Change Profile Picture") },
         text = {
             Column {
 
-                OutlinedTextField(
-                    value = newPFP,
-                    onValueChange = { newPFP = it },
-                    label = { Text("Profile Picture") }
-                )
+                UploadPhotoButton(onUriReady = {
+                    newPFP = it
+                    Log.i("TAG", "ChangePFP: " + newPFP)
+                    user?.let { firebaseViewModel.addPFPToFirestore(user, newPFP) }
+                }, type = "Profile" , picName = user.toString() )
             }
 
         },
