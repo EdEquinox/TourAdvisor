@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -73,42 +74,59 @@ fun ProfileScreen(
             .fillMaxWidth()
             .background(color = colorResource(id = R.color.white))
         ){
-            val items = firebaseViewModel.myPOIs
-            LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxSize()) {
-                items(items.value) { item ->
+            val pois = firebaseViewModel.myPOIs
+            LazyRow{
+                items(pois.value.size){ index ->
+                    val poi = pois.value[index]
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        elevation = CardDefaults.cardElevation(4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(128,224,255),
-                            contentColor = Color(0,0,128)
-                        ),
-                        onClick = {
-                            Log.d("POI", "Clicked on ${item.image.toString()}")
-                        }
+                            .padding(10.dp)
+                            .width(150.dp)
+                            .height(150.dp),
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .padding(8.dp)
-                                .fillMaxHeight(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = item.name?:"", fontSize = 20.sp)
-                            Text(text = "${item.category?.nome}", fontSize = 14.sp)
-                            if (item.image != ""){
-                                Image(painter = item.toImage(), contentDescription = "POI Image")
-                            }
-                            else{
-                                Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "POI Image")
-                            }
+                        Column {
+                            poi.name?.let { Text(text = it, fontSize = 20.sp) }
+                            poi.description?.let { Text(text = it, fontSize = 15.sp) }
+                            poi.category?.let { it.nome?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
+                            poi.location?.let { it.name?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
+                            poi.image?.let { Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "PFP",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                                    .background(color = colorResource(id = R.color.white))) }
                         }
                     }
                 }
             }
-            Text(text = "No more POIs to show", modifier = Modifier.align(alignment = Alignment.Center))
+        }
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .background(color = colorResource(id = R.color.white))
+        ){
+            val pois = firebaseViewModel.sortedPOIs
+            LazyRow{
+                items(pois.value.size){ index ->
+                    val poi = pois.value[index]
+                    Card(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .width(150.dp)
+                            .height(150.dp),
+                    ) {
+                        Column {
+                            poi.name?.let { Text(text = it, fontSize = 20.sp) }
+                            poi.description?.let { Text(text = it, fontSize = 15.sp) }
+                            poi.category?.let { it.nome?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
+                            poi.location?.let { it.name?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
+                            poi.image?.let { Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "PFP",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                                    .background(color = colorResource(id = R.color.white))) }
+                        }
+                    }
+                }
+            }
         }
     }
 }

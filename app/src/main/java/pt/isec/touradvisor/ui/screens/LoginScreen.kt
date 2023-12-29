@@ -73,7 +73,12 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(50.dp))
         Row(modifier = Modifier.align(alignment = CenterHorizontally)) {
             Button(
-                onClick = { viewModel.signInWithEmail(email.value, password.value) },
+                onClick = {
+                    if (email.value.isBlank() || password.value.isBlank()){
+                        Toast.makeText(null, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    viewModel.signInWithEmail(email.value, password.value) },
                 modifier = Modifier.width(120.dp)
             ) {
                 Text(text = "Login")

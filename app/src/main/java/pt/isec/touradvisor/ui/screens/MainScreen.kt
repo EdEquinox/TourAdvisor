@@ -116,6 +116,9 @@ fun MainScreen(
             composable(Screens.SETTINGS.route) {
                 SettingScreen(firebaseViewModel = firebaseViewModel)
             }
+            composable(Screens.SEARCH.route) {
+                SearchScreen(navController = navController, firebaseViewModel = firebaseViewModel,locationViewModel= locationViewModel , searchHistoryViewModel = searchHistoryViewModel)
+            }
         }
 
     }

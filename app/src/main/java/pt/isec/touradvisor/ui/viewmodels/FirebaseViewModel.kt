@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
@@ -190,5 +191,14 @@ class FirebaseViewModel : ViewModel() {
                 _error.value = exception?.message
             }
         }
+    }
+
+    fun addAvaliacao(avaliacao: Avaliacao) {
+        viewModelScope.launch {
+            FStorageUtil.addAvaliacao(avaliacao) { exception ->
+                _error.value = exception?.message
+            }
+        }
+
     }
 }

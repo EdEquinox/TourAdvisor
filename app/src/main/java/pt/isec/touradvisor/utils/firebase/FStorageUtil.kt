@@ -13,6 +13,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
@@ -23,9 +24,6 @@ import kotlin.coroutines.resumeWithException
 
 class FStorageUtil {
     companion object {
-
-
-
 
         fun removeDataFromFirestore(onResult: (Throwable?) -> Unit) {
             val db = Firebase.firestore
@@ -95,16 +93,18 @@ class FStorageUtil {
                                     val docRefLoc = it.getDocumentReference("location")
                                     val documentCat = docRefCat?.get()?.await()
                                     val documentLoc = docRefLoc?.get()?.await()
+                                    val nomeLoc = documentLoc?.getString("nome") ?: ""
+                                    val descLoc = documentLoc?.getString("descricao") ?: ""
+                                    val imageLoc = documentLoc?.getString("imagem") ?: ""
+                                    val geoPointLoc = documentLoc?.getGeoPoint("geopoint")
+                                    val location = Local(nomeLoc, descLoc, imageLoc, geoPointLoc)
                                     val category = documentCat?.toObject(Category::class.java)
-                                    val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
                                     val description = it.getString("descricao") ?: ""
                                     val geoPoint = it.getGeoPoint("geoPoint")
                                     val image = it.getString("imagem") ?: ""
 
                                     pois.add(POI(name, description, geoPoint, category,  location, image))
-                                    Log.i("LOCAL", location.toString())
-                                    Log.i("posis", category.toString())
                                 }
                                 checkAllListenersCompleted()
                             }
@@ -135,7 +135,6 @@ class FStorageUtil {
         fun getUserPOIS(user: String, onNewValues: (MutableList<POI>) -> Unit) {
             val db = Firebase.firestore
             val pois = mutableListOf<POI>()
-            Log.i("POISsadasd", user.toString())
 
             suspend fun DocumentReference.getSuspended(): DocumentSnapshot? =
                 suspendCancellableCoroutine { continuation ->
@@ -158,8 +157,12 @@ class FStorageUtil {
                                     val docRefLoc = it.getDocumentReference("location")
                                     val documentCat = docRefCat?.get()?.await()
                                     val documentLoc = docRefLoc?.get()?.await()
+                                    val nomeLoc = documentLoc?.getString("nome") ?: ""
+                                    val descLoc = documentLoc?.getString("descricao") ?: ""
+                                    val imageLoc = documentLoc?.getString("imagem") ?: ""
+                                    val geoPointLoc = documentLoc?.getGeoPoint("geopoint")
+                                    val location = Local(nomeLoc, descLoc, imageLoc, geoPointLoc)
                                     val category = documentCat?.toObject(Category::class.java)
-                                    val location = documentLoc?.toObject(Local::class.java)
                                     val name = it.getString("nome") ?: ""
                                     val description = it.getString("descricao") ?: ""
                                     val geoPoint = it.getGeoPoint("geoPoint")
@@ -167,11 +170,8 @@ class FStorageUtil {
                                     val nuser = it.getString("user") ?: ""
                                     if (nuser == user){
                                         pois.add(POI(name, description, geoPoint, category, location, image, nuser))
-                                        Log.i("LOCAL12", location.toString())
-                                        Log.i("posis", category.toString())
                                     }
                                 }
-                                Log.i("POIS", pois.toString())
                                 onNewValues(pois)
                             }
                         }
@@ -258,6 +258,14 @@ class FStorageUtil {
                     onResult(result.exception)
                 }
 
+        }
+
+        fun addAvaliacao(avaliacao: Avaliacao, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            db.collection("Avaliacoes").document("${avaliacao.poi}.${avaliacao.user}").set(avaliacao)
+                .addOnCompleteListener{result ->
+                    onResult(result.exception)
+                }
         }
 
     }
