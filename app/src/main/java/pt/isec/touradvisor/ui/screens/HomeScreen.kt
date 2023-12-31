@@ -57,6 +57,7 @@ import coil.compose.rememberImagePainter
 import com.google.firebase.firestore.GeoPoint
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
+import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
@@ -86,7 +87,7 @@ fun HomeScreen(
     var searchTrue: Boolean by remember { mutableStateOf(false) }
     var openCardDialog by remember { mutableStateOf(false) }
     var poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
-    var selectedLocal by remember { mutableStateOf(firebaseViewModel.locations.value[0]) }
+    var selectedLocal: Local? by remember { mutableStateOf(null) }
     val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
     val locationsList by remember { mutableStateOf(firebaseViewModel.locations) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
@@ -100,9 +101,12 @@ fun HomeScreen(
     var sortedLocal by remember { mutableStateOf(firebaseViewModel.sortedLocal) }
     var categoriaDialog by remember { mutableStateOf(false) }
     var openPOIdialog by remember { mutableStateOf(false) }
-    var selectedPOI by remember { mutableStateOf(firebaseViewModel.POIs.value[0]) }
+    var selectedPOI: POI? by remember { mutableStateOf(null) }
     var avaliacao:Avaliacao? by remember { mutableStateOf(null) }
     var pfp by remember { mutableStateOf(firebaseViewModel.myPfp) }
+    var searchedPOIs : List<POI>?
+    var searchedLocations : List<Local>?
+    var searchedCategories : List<Category>?
 
     LaunchedEffect(key1 = user){
         if (user == null){
@@ -124,14 +128,19 @@ fun HomeScreen(
                 query = query,
                 onQueryChange = { query = it },
                 onSearch = {
-                    searchList = poisList
-                    Log.i("Map", searchList.value.toString())
-                    Log.i("Map", poisList.value.toString())
+                    searchedCategories = categoriesList.value
+                    searchedLocations = locationsList.value
+                    searchedPOIs = poisList.value
                     active = false
                     searchTrue = true
                     searchHistoryViewModel.addSearch(query)
-                    searchList.value = searchList.value.filter { it.name?.contains(query, ignoreCase = true) == true }
-                    Log.i("Map", searchList.value.toString())
+                    searchHistory = searchHistoryViewModel.searchHistory
+                    searchedCategories = searchedCategories?.filter { it.nome?.contains(query, ignoreCase = true) == true }
+                    searchedLocations = searchedLocations?.filter { it.name?.contains(query, ignoreCase = true) == true }
+                    searchedPOIs = searchedPOIs?.filter { it.name?.contains(query, ignoreCase = true) == true }
+                    searchHistoryViewModel.searchedCategories.value = searchedCategories!!
+                    searchHistoryViewModel.searchedLocals.value = searchedLocations!!
+                    searchHistoryViewModel.searchedPOIs.value = searchedPOIs!!
                     navController?.navigate(Screens.SEARCH.route)
                 },
                 active = active,
@@ -203,7 +212,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(8.dp)
                     )
-            MapViewComposable(mapCenter = mapCenter, poisList = poisList.value, selecedLocal = selectedLocal)
+            selectedLocal?.let { MapViewComposable(mapCenter = mapCenter, poisList = poisList.value, selecedLocal = it) }
             Row(
                 modifier
                     .zIndex(1f)
@@ -234,7 +243,7 @@ fun HomeScreen(
                 mapCenter = geoPoint
                 openPOIdialog = true
                 selectedPOI = it
-            })
+            }, categorias = categoriesList)
         }
         Ordenacao(
             orderBy = orderBy,
@@ -296,18 +305,22 @@ fun HomeScreen(
         }
     }
     if (openCardDialog) {
-        ViewLocation(location = selectedLocal, onDismiss = { openCardDialog = false }, poisList = poisList.value, onSelect = {
-            geoPoint = it.geoPoint?: GeoPoint(0.0, 0.0)
-            mapCenter = geoPoint
-            openPOIdialog = true
-            selectedPOI = it
-        })
+        selectedLocal?.let {
+            ViewLocation(location = it, onDismiss = { openCardDialog = false }, poisList = poisList.value, onSelect = {
+                geoPoint = it.geoPoint?: GeoPoint(0.0, 0.0)
+                mapCenter = geoPoint
+                openPOIdialog = true
+                selectedPOI = it
+            })
+        }
     }
     if (openPOIdialog) {
-        ViewPOI(poi = selectedPOI, onDismiss = { openPOIdialog = false }, firebaseViewModel = firebaseViewModel, onSelect = {
-            avaliacao = Avaliacao(it["comment"].toString(), it["rating"] as Int, it["user"].toString(), it["poi"].toString())
-            firebaseViewModel.addAvaliacao(avaliacao?:Avaliacao("Error", 0, "Error", "Error"))
-            openPOIdialog = false
-        })
+        selectedPOI?.let {
+            ViewPOI(poi = it, onDismiss = { openPOIdialog = false }, firebaseViewModel = firebaseViewModel, onSelect = {
+                avaliacao = Avaliacao(it["comment"].toString(), it["rating"] as Int, it["user"].toString(), it["poi"].toString())
+                firebaseViewModel.addAvaliacao(avaliacao?:Avaliacao("Error", 0, "Error", "Error"))
+                openPOIdialog = false
+            })
+        }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,17 +60,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import coil.compose.rememberImagePainter
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.firestore
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import pt.isec.touradviser.R
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
@@ -147,39 +153,50 @@ fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>, on
 @Composable
 fun ViewFilter(
     poisList: MutableState<List<POI>>,
+    categorias: MutableState<List<Category>>,
     category: String,
     onDismiss: () -> Unit,
     onSelect: (POI) -> Unit
 )
 {
+    var categoria by remember { mutableStateOf(Category()) }
+    for (cat in categorias.value){
+        if (cat.nome == category){
+            categoria = cat
+        }
+    }
     poisList.value.filter{ it.category?.nome == category }
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .height(400.dp),
+            .padding(8.dp),
         onDismissRequest = { onDismiss() },
         title = { Text(text = category, fontSize = 20.sp) },
         text = {
-            LazyVerticalGrid(columns = GridCells.Fixed(3), content = {
-                poisList.value.forEach {
-                    item {
-                        if (it.category?.nome == category){
-                            Card(onClick = {
-                                onDismiss()
-                                onSelect(it)
-                            }, content = {
-                                Column {
-                                    Text(text = it.name?:"", fontSize = 14.sp)
-                                    Image(painter = it.toImage(), contentDescription = "POI Image", modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp))
-                                }
-                            })
+            Column {
+                Image(painter = rememberImagePainter(data = categoria.imagem ), contentDescription = "Filter Image", modifier = Modifier
+                    .size(40.dp))
+                LazyVerticalGrid(columns = GridCells.Fixed(3), content = {
+                    poisList.value.forEach {
+                        item {
+                            if (it.category?.nome == category){
+                                Card(onClick = {
+                                    onDismiss()
+                                    onSelect(it)
+                                }, content = {
+                                    Column {
+                                        Text(text = it.name?:"", fontSize = 14.sp)
+                                        Image(painter = it.toImage(), contentDescription = "POI Image", modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(50.dp))
+                                    }
+                                })
+                            }
                         }
                     }
-                }
-            })
+                })
+            }
+
         },
         confirmButton = {
             Button(onClick = {
@@ -677,25 +694,33 @@ fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: Strin
 }
 
 @Composable
-fun ViewPOI(poi: POI , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) -> Unit, firebaseViewModel: FirebaseViewModel){
+fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) -> Unit, firebaseViewModel: FirebaseViewModel){
     var comment by remember { mutableStateOf("") }
     var stars by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     var data = hashMapOf<String,Any>()
-    val own by remember { mutableStateOf(poi.user == firebaseViewModel.userUID.value) }
+    val own by remember { mutableStateOf(poi?.user == firebaseViewModel.userUID.value) }
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         onDismissRequest = { onDismiss() },
-        title = { Text(text = poi.name?:"", fontSize = 20.sp) },
+        title = {
+            if (poi != null) {
+                Text(text = poi.name?:"", fontSize = 20.sp)
+            }
+        },
         text = {
             LazyColumn(content = {
                 item {
-                    Text(text = poi.description?:"", fontSize = 14.sp, maxLines = 3)
-                    Image(painter = poi.toImage(), contentDescription = "POI Image", modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp))
+                    if (poi != null) {
+                        Text(text = poi.description?:"", fontSize = 14.sp, maxLines = 3)
+                    }
+                    if (poi != null) {
+                        Image(painter = poi.toImage(), contentDescription = "POI Image", modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp))
+                    }
                     if (!own){
                         OutlinedTextField(
                             value = comment,
@@ -719,12 +744,14 @@ fun ViewPOI(poi: POI , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) 
                             }
                         }
                     }
-                    data = hashMapOf(
-                        "comment" to comment,
-                        "rating" to stars,
-                        "poi" to poi.name!!,
-                        "user" to firebaseViewModel.userUID.value!!
-                    )
+                    if (poi != null) {
+                        data = hashMapOf(
+                            "comment" to comment,
+                            "rating" to stars,
+                            "poi" to poi.name!!,
+                            "user" to firebaseViewModel.userUID.value!!
+                        )
+                    }
                 }
             })
         },
@@ -739,7 +766,9 @@ fun ViewPOI(poi: POI , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) 
         confirmButton = {
             if (own){
                 Button(onClick = {
-                    firebaseViewModel.removePoiFromFirestore(poi.name!!)
+                    if (poi != null) {
+                        firebaseViewModel.removePoiFromFirestore(poi.name!!)
+                    }
                     onDismiss()
                 }) {
                     Text(text = "Remover")
@@ -759,4 +788,118 @@ fun ViewPOI(poi: POI , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) 
         },
     )
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoryCard(category: Category,onClick: () -> Unit = {}) {
+
+    Card(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth()
+            .height(150.dp),
+        onClick = {
+            onClick()
+        }
+    ) {
+        Column {
+            category.nome?.let { Text(text = it, fontSize = 20.sp) }
+            category.descricao?.let { Text(text = it, fontSize = 15.sp) }
+            category.descricao?.let {
+                Text(
+                    text = it,
+                    fontSize = 15.sp
+                )
+            }
+            category.imagem?.let {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = "PFP",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape = RectangleShape)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LocalCard(local: Local, onClick: () -> Unit) {
+
+    Card(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth()
+            .height(150.dp),
+        onClick = {
+            onClick()
+        }
+    ) {
+        Column {
+            local.name?.let { Text(text = it, fontSize = 20.sp) }
+            local.description?.let { Text(text = it, fontSize = 15.sp) }
+            local.image?.let {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = "PFP",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape = RectangleShape)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun POICard(poi: POI, onClick: () -> Unit = {}) {
+
+    Card(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth()
+            .height(150.dp),
+        onClick = {
+            onClick()
+        }
+    ) {
+        Column {
+            poi.name?.let { Text(text = it, fontSize = 20.sp) }
+            poi.description?.let { Text(text = it, fontSize = 15.sp) }
+            poi.category?.let {
+                it.nome?.let { it1 ->
+                    Text(
+                        text = it1,
+                        fontSize = 15.sp
+                    )
+                }
+            }
+            poi.location?.let {
+                it.name?.let { it1 ->
+                    Text(
+                        text = it1,
+                        fontSize = 15.sp
+                    )
+                }
+            }
+            poi.image?.let {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = "PFP",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape = RectangleShape)
+                )
+            }
+        }
+    }
+
+}
+
 

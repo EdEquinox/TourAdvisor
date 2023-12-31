@@ -8,12 +8,12 @@ data class User(
     val picture : String? = null
 ) {
     override fun toString(): String {
-        return name ?: ""
+        return name ?: "User"
     }
 }
 
 fun FirebaseUser.toUser() : User {
-    val displayName = this.displayName ?: ""
+    val displayName = this.displayName ?: "User"
     val email = this.email ?: ""
     val picture = this.photoUrl.toString() ?:""
 

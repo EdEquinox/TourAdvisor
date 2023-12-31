@@ -71,6 +71,7 @@ class FStorageUtil {
                             }
                         }
                     }
+                    Log.i("OBSERVER", "categorias")
                     checkAllListenersCompleted()
                 }
             listenerRegistrationPOIs = db.collection("POI")
@@ -98,6 +99,7 @@ class FStorageUtil {
 
                                     pois.add(POI(name, description, geoPoint, category,  location, image))
                                 }
+                                Log.i("OBSERVER", "POIS")
                                 checkAllListenersCompleted()
                             }
                         }
@@ -118,6 +120,7 @@ class FStorageUtil {
                             }
                         }
                     }
+                    Log.i("OBSERVER", "locations")
                     checkAllListenersCompleted()
                 }
 

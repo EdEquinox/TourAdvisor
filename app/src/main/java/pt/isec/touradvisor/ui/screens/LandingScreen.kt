@@ -57,14 +57,35 @@ fun LandingScreen(
     }
 
     LaunchedEffect(key1 = true) {
-        locationViewModel.startLocationUpdates()
-        firebaseViewModel.startObserver()
-        firebaseViewModel.getUserPOIs()
-        firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
-        Log.i("PFP", firebaseViewModel.myPfp.value)
+        if (firebaseViewModel.userUID.value == null) {
+            delay(2000)
+            navController.navigate(Screens.LOGIN.route) // navigate to LoginScreen after delay
+        } else{
+            locationViewModel.stopLocationUpdates()
+            locationViewModel.startLocationUpdates()
+            firebaseViewModel.startObserver()
+            firebaseViewModel.getUserPOIs()
+            firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
 //        firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value?:"")
 //        Log.i("rating", firebaseViewModel.myRatings.value.toString())
-        navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
+            navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
+        }
+//        if (firebaseViewModel.userUID.value == null) {
+//            Log.i("PFP1", firebaseViewModel.myPfp.value)
+//            locationViewModel.startLocationUpdates()
+//            Log.i("PFP2", firebaseViewModel.myPfp.value)
+//            //firebaseViewModel.startObserver()
+//            Log.i("PFP3", firebaseViewModel.myPfp.value)
+//            navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
+//        } else{
+//            firebaseViewModel.startObserver()
+//            firebaseViewModel.getUserPOIs()
+//            firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
+//            Log.i("PFP", firebaseViewModel.myPfp.value)
+////        firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value?:"")
+////        Log.i("rating", firebaseViewModel.myRatings.value.toString())
+//            navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
+//        }
     }
 
 }

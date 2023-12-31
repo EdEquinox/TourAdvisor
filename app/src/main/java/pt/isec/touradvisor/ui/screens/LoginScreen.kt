@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,7 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     onLogin: () -> Unit = {}
     ) {
-
+    val context = LocalContext.current
     val email = remember { mutableStateOf("")}
     val password = remember { mutableStateOf("")}
     val error = viewModel.error.value
@@ -75,17 +76,23 @@ fun LoginScreen(
             Button(
                 onClick = {
                     if (email.value.isBlank() || password.value.isBlank()){
-                        Toast.makeText(null, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
-                    viewModel.signInWithEmail(email.value, password.value) },
+                    viewModel.signInWithEmail(email.value, password.value)},
                 modifier = Modifier.width(120.dp)
             ) {
                 Text(text = "Login")
             }
             Spacer(modifier = Modifier.width(60.dp))
             Button(
-                onClick = { viewModel.createUserWithEmail(email.value, password.value) },
+                onClick = {
+                    if (email.value.isBlank() || password.value.isBlank()){
+                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    viewModel.createUserWithEmail(email.value, password.value)
+                },
                 modifier = Modifier.width(120.dp)
             ) {
                 Text(text = "Register")
@@ -100,8 +107,9 @@ fun LoginScreen(
                 .size(250.dp)
         )
 
+
         if (error != null) {
-            Toast.makeText(null, error, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
         }
     }
 

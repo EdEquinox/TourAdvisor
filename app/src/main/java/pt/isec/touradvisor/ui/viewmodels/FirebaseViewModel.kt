@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
@@ -19,12 +20,23 @@ import kotlin.coroutines.suspendCoroutine
 
 class FirebaseViewModel : ViewModel() {
 
+    var logged = mutableStateOf(false)
+
     private val _sortedLocal = mutableStateOf(listOf<Local>())
     val sortedLocal: MutableState<List<Local>>
         get() = _sortedLocal
+
+    private val _rawUser = mutableStateOf(FAuthUtil.currentUser)
+    val rawUser : MutableState<FirebaseUser?>
+        get() = _rawUser
+
     private val _user = mutableStateOf(FAuthUtil.currentUser?.toUser())
     val user : MutableState<User?>
         get() = _user
+
+    fun getNickname() : String? {
+        return rawUser.value?.displayName
+    }
 
     private val _error = mutableStateOf<String?>(null)
     val error: MutableState<String?>
@@ -93,6 +105,19 @@ class FirebaseViewModel : ViewModel() {
     val myPfp : MutableState<String>
         get() = _myPfp
 
+    private val _searchedPOIs = mutableStateOf(listOf<POI>())
+    private val _searchedLocations = mutableStateOf(listOf<Local>())
+    private val _searchedCategories = mutableStateOf(listOf<Category>())
+
+    val searchedPOIs : MutableState<List<POI>>
+        get() = _searchedPOIs
+
+    val searchedLocations : MutableState<List<Local>>
+        get() = _searchedLocations
+
+    val searchedCategories : MutableState<List<Category>>
+        get() = _searchedCategories
+
     fun addPOIToFirestore(data: HashMap<String,Any>) {
         viewModelScope.launch {
             FStorageUtil.addPOIToFirestore(data) { exception ->
@@ -126,14 +151,24 @@ class FirebaseViewModel : ViewModel() {
     }
 
     suspend fun startObserver() : Boolean {
+        Log.i("OBSERVER", "start")
         return suspendCoroutine { continuation ->
+            Log.i("OBSERVER", "start2")
             FStorageUtil.startObserver(onNewValues = { c, p, l ->
+                Log.i("OBSERVER", "start3")
                 try {
-                    _categories.value = c
-                    _POIs.value = p
-                    _locations.value = l
-                    _sortedLocal.value = l
-                    continuation.resume(true)
+                    if (userUID.value == null){
+                        Log.i("OBSERVER", "null")
+                        continuation.resume(true)
+                    } else{
+                        Log.i("OBSERVER", "not null")
+                        _categories.value = c
+                        _POIs.value = p
+                        _locations.value = l
+                        _sortedLocal.value = l
+                        continuation.resume(true)
+                    }
+
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -148,6 +183,11 @@ class FirebaseViewModel : ViewModel() {
             userUID.value?.let {
                 FStorageUtil.getUserPOIS(it) { pois->
                     try {
+                        if (userUID.value == null){
+                            Log.i("POIS", "null")
+                            continuation.resume(listOf())
+                            return@getUserPOIS
+                        }
                         myPOIs.value = pois
                         sortedPOIs.value = pois
                         continuation.resume(pois)
@@ -163,6 +203,11 @@ class FirebaseViewModel : ViewModel() {
         return suspendCoroutine {
             FStorageUtil.getUserPfp(user) { pfp ->
                 try {
+                    if (userUID.value == null){
+                        Log.i("PFP", "null")
+                        it.resume(Unit)
+                        return@getUserPfp
+                    }
                     myPfp.value = pfp
                     Log.i("PFP", myPfp.value)
                     it.resume(Unit)

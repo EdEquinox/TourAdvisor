@@ -1,5 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import pt.isec.touradviser.R
+import pt.isec.touradvisor.data.POI
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,7 +44,8 @@ fun ProfileScreen(
 ) {
     val pfp = firebaseViewModel.myPfp
     var openPoiCard by remember { mutableStateOf(false) }
-    var selectedPOI by remember { mutableStateOf(firebaseViewModel.myPOIs.value[0]) }
+    var selectedPOI: POI? by remember { mutableStateOf(null) }
+    val userName = firebaseViewModel.user.value?.name
     Column(modifier = Modifier.background(color = Color(0xFF97CCEB))) {
         Box(modifier = Modifier
             .background(color = Color(0xFF97CCEB))
@@ -61,11 +64,18 @@ fun ProfileScreen(
                     .height(100.dp)
                     .align(alignment = Alignment.BottomCenter)
                     .border(2.dp, Color.White, CircleShape)){
-                    Image(painter = rememberImagePainter(data = pfp.value), contentDescription = "PFP",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape), contentScale = ContentScale.Crop)
+                    if (pfp.value != ""){
+                        Image(painter = rememberImagePainter(data = pfp.value), contentDescription = "PFP",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape), contentScale = ContentScale.Crop)
+                    } else{
+                        Image(painter = rememberImagePainter(data = R.drawable.profile_pic), contentDescription = "PFP",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape), contentScale = ContentScale.Crop)
                     }
+                }
             }
         }
         Box(modifier = Modifier
@@ -73,29 +83,55 @@ fun ProfileScreen(
             .background(color = Color(0xFF97CCEB))
         ){
             val pois = firebaseViewModel.myPOIs
-            LazyRow{
-                items(pois.value.size){ index ->
-                    val poi = pois.value[index]
-                    Card(
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .width(150.dp)
-                            .height(150.dp),
-                        onClick = {
-                            openPoiCard = true
-                            selectedPOI = poi
-                        }
-                    ) {
-                        Column {
-                            poi.name?.let { Text(text = it, fontSize = 20.sp) }
-                            poi.description?.let { Text(text = it, fontSize = 15.sp) }
-                            poi.category?.let { it.nome?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
-                            poi.location?.let { it.name?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
-                            poi.image?.let { Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "PFP",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .background(color = colorResource(id = R.color.white))) }
+            Column {
+                if (userName != null){
+                    Text(text = userName, fontSize = 30.sp)
+                } else{
+                    Text(text = "User", fontSize = 30.sp)
+                }
+                LazyRow {
+                    items(pois.value.size) { index ->
+                        val poi = pois.value[index]
+                        Card(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .width(150.dp)
+                                .height(150.dp),
+                            onClick = {
+                                openPoiCard = true
+                                selectedPOI = poi
+                            }
+                        ) {
+                            Column {
+                                poi.name?.let { Text(text = it, fontSize = 20.sp) }
+                                poi.description?.let { Text(text = it, fontSize = 15.sp) }
+                                poi.category?.let {
+                                    it.nome?.let { it1 ->
+                                        Text(
+                                            text = it1,
+                                            fontSize = 15.sp
+                                        )
+                                    }
+                                }
+                                poi.location?.let {
+                                    it.name?.let { it1 ->
+                                        Text(
+                                            text = it1,
+                                            fontSize = 15.sp
+                                        )
+                                    }
+                                }
+                                poi.image?.let {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                                        contentDescription = "PFP",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(150.dp)
+                                            .background(color = colorResource(id = R.color.white))
+                                    )
+                                }
+                            }
                         }
                     }
                 }

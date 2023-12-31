@@ -1,11 +1,10 @@
 package pt.isec.touradvisor.ui.screens
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +25,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.ui.viewmodels.SearchHistoryViewModel
@@ -81,6 +79,7 @@ fun MainScreen(
                         if (showLogoutAction)
                             IconButton(onClick = {
                                 firebaseViewModel.signOut()
+                                Log.d("MainScreen", "Logout")
                                 navController.navigate(Screens.LOGIN.route)
                             }) {
                                 Icon(
@@ -111,13 +110,16 @@ fun MainScreen(
                 ProfileScreen( navController = navController, firebaseViewModel = firebaseViewModel)
             }
             composable(Screens.LOGIN.route) {
-                LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.HOME.route) })
+                LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.LANDING.route) })
             }
             composable(Screens.SETTINGS.route) {
                 SettingScreen(firebaseViewModel = firebaseViewModel)
             }
             composable(Screens.SEARCH.route) {
-                SearchScreen(navController = navController, firebaseViewModel = firebaseViewModel,locationViewModel= locationViewModel , searchHistoryViewModel = searchHistoryViewModel)
+                SearchScreen(
+                    firebaseViewModel = firebaseViewModel,
+                    searchHistoryViewModel = searchHistoryViewModel
+                )
             }
         }
 
