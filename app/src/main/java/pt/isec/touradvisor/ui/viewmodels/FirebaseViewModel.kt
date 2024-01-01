@@ -223,6 +223,7 @@ class FirebaseViewModel : ViewModel() {
             FStorageUtil.getUserRatings(user) { ratings ->
                 try {
                     myRatings.value = ratings
+                    it.resume(Unit)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

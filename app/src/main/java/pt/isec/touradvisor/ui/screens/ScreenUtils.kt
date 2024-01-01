@@ -103,32 +103,8 @@ fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>, on
                 poisList.forEach {
                     item {
                         if (it.location?.name == location.name){
-                            Card (onClick = {
-                                onDismiss()
+                            POICard(poi = it){
                                 onSelect(it)
-                            }) {
-                                Column(modifier = Modifier.padding(8.dp)) {
-                                    Box(modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(30.dp)
-                                        .background(Color(0, 0, 0, 0))) {
-                                        Text(text = it.name?:"", fontSize = 16.sp, modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .padding(bottom = 8.dp))
-                                    }
-                                    Spacer(modifier = Modifier
-                                        .height(8.dp)
-                                        .background(Color(0, 0, 0, 0)))
-                                    Row {
-                                        Image(painter = it.toImage(), contentDescription = "POI Image", modifier = Modifier
-                                            .width(100.dp)
-                                            .height(50.dp))
-                                        Text(text = it.description?:"", fontSize = 10.sp, modifier = Modifier
-                                            .width(50.dp)
-                                            .height(50.dp)
-                                            .padding(start = 5.dp), maxLines = 3)
-                                    }
-                                }
                             }
                             Spacer(modifier = Modifier
                                 .height(8.dp)
@@ -176,21 +152,13 @@ fun ViewFilter(
             Column {
                 Image(painter = rememberImagePainter(data = categoria.imagem ), contentDescription = "Filter Image", modifier = Modifier
                     .size(40.dp))
-                LazyVerticalGrid(columns = GridCells.Fixed(3), content = {
+                LazyColumn(content = {
                     poisList.value.forEach {
                         item {
                             if (it.category?.nome == category){
-                                Card(onClick = {
-                                    onDismiss()
+                                POICard(poi = it){
                                     onSelect(it)
-                                }, content = {
-                                    Column {
-                                        Text(text = it.name?:"", fontSize = 14.sp)
-                                        Image(painter = it.toImage(), contentDescription = "POI Image", modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(50.dp))
-                                    }
-                                })
+                                }
                             }
                         }
                     }
@@ -870,7 +838,7 @@ fun POICard(poi: POI, onClick: () -> Unit = {}) {
     ) {
         Column {
             poi.name?.let { Text(text = it, fontSize = 20.sp) }
-            poi.description?.let { Text(text = it, fontSize = 15.sp) }
+            poi.description?.let { Text(text = it, fontSize = 15.sp, maxLines = 1) }
             poi.category?.let {
                 it.nome?.let { it1 ->
                     Text(
@@ -889,7 +857,7 @@ fun POICard(poi: POI, onClick: () -> Unit = {}) {
             }
             poi.image?.let {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    painter = poi.toImage(),
                     contentDescription = "PFP",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
