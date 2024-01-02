@@ -1,6 +1,5 @@
 package pt.isec.touradvisor.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
@@ -31,7 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import pt.isec.touradviser.R
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 
 @Composable
@@ -46,42 +48,56 @@ fun SettingScreen(
     val showDialogPFP = remember { mutableStateOf(false) }
 
     Spacer(modifier = Modifier.height(100.dp))
-    Column(modifier = Modifier.fillMaxWidth()) {
-
-        Setting(text = "Change Profile Picture",
-            imageVector = Icons.Default.Person,
-            contentDescription = "Profile Pic",
-            onClick = {
-                showDialogPFP.value = true
-                Log.i("TAG", "SettingScreen: " + showDialogPFP.value)
-            }
-        )
-        Setting(text = "Change Profile Picture",
-            imageVector = Icons.Default.Person,
-            contentDescription = "Profile Pic",
-            onClick = {
-                showDialogPFP.value = true
-                Log.i("TAG", "SettingScreen: " + showDialogPFP.value)
-            }
-        )
-        Setting(text = "Change Password", imageVector = Icons.Default.Key, contentDescription = "Change Password" , onClick = {
-            showDialogPassword.value = true
-            Log.i("TAG", "SettingScreen: " + showDialogPassword.value)
-        })
-        Setting(text = "Change Email", imageVector = Icons.Default.Mail, contentDescription = "Change Email" ) {
-            showDialogEmail.value = true
+    LazyColumn(content = {
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
         }
-        Setting(text = "Change Nickname", imageVector = Icons.Default.DriveFileRenameOutline, contentDescription = "Change Nick" ) {
-            showDialogNick.value = true
+        item {
+            Setting(text = stringResource(R.string.change_profile_picture),
+                imageVector = Icons.Default.Person,
+                contentDescription = "Profile Pic",
+                onClick = {
+                    showDialogPFP.value = true
+                }
+            )
         }
-        Setting(text = "Delete Account", imageVector = Icons.Default.Delete, contentDescription = "Delete Account" ) {
-            showDialogDelete.value = true
+        item {
+            Setting(text = stringResource(R.string.change_password),
+                imageVector = Icons.Default.Key,
+                contentDescription = "Change Password" ,
+                onClick = {
+                    showDialogPassword.value = true
+                })
         }
-
-        Setting(text = "Info", imageVector = Icons.Default.Info, contentDescription = "Info" ) {
-            showDialogInfo.value = true
+        item {
+            Setting(text = stringResource(R.string.change_email),
+                imageVector = Icons.Default.Mail,
+                contentDescription = "Change Email" ) {
+                    showDialogEmail.value = true
+                }
         }
-    }
+        item {
+            Setting(text = stringResource(R.string.change_nickname),
+                imageVector = Icons.Default.DriveFileRenameOutline,
+                contentDescription = "Change Nick" ) {
+                    showDialogNick.value = true
+                }
+        }
+        item {
+            Setting(text = stringResource(R.string.delete_account),
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete Account" ) {
+                    showDialogDelete.value = true
+                }
+        }
+        item {
+            Setting(text = stringResource(R.string.info),
+                imageVector = Icons.Default.Info,
+                contentDescription = "Info" ) {
+                    showDialogInfo.value = true
+                }
+        }
+    })
 
     if (showDialogPassword.value){
         ChangePassword(firebaseViewModel = firebaseViewModel) { showDialogPassword.value = false }
@@ -139,23 +155,23 @@ fun ChangePassword(
     var newPassword2 by remember { mutableStateOf("") }
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Change Password") },
+        title = { Text(text = stringResource(R.string.change_password)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = { oldPassword = it },
-                    label = { Text("Password Antiga") }
+                    label = { Text(stringResource(R.string.password_antiga)) }
                 )
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
-                    label = { Text("Password Nova") }
+                    label = { Text(stringResource(R.string.password_nova)) }
                 )
                 OutlinedTextField(
                     value = newPassword2,
                     onValueChange = { newPassword2 = it },
-                    label = { Text("Password Nova") }
+                    label = { Text(stringResource(R.string.password_nova)) }
                 )
             }
 
@@ -164,12 +180,12 @@ fun ChangePassword(
             Button(onClick = {
                 firebaseViewModel.changePassword(oldPassword, newPassword, newPassword2)
             }) {
-                Text(text = "Confirm")
+                Text(text = stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancelar))
             }
         }
     )
@@ -185,14 +201,14 @@ fun ChangeEmail(
 
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Change Email") },
+        title = { Text(text = stringResource(R.string.change_email)) },
         text = {
             Column {
 
                 OutlinedTextField(
                     value = newEmail,
                     onValueChange = { newEmail = it },
-                    label = { Text("Email Novo") }
+                    label = { Text(stringResource(R.string.email_novo)) }
                 )
             }
 
@@ -201,12 +217,12 @@ fun ChangeEmail(
             Button(onClick = {
                 firebaseViewModel.changeEmail(newEmail)
             }) {
-                Text(text = "Confirm")
+                Text(text = stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancelar))
             }
         }
     )
@@ -221,14 +237,14 @@ fun ChangeNick(
     var newNick by remember { mutableStateOf("") }
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Change Nickname") },
+        title = { Text(text = stringResource(R.string.change_nickname)) },
         text = {
             Column {
 
                 OutlinedTextField(
                     value = newNick,
                     onValueChange = { newNick = it },
-                    label = { Text("Nickname Novo") }
+                    label = { Text(stringResource(R.string.nickname_novo)) }
                 )
             }
 
@@ -237,12 +253,12 @@ fun ChangeNick(
             Button(onClick = {
                 firebaseViewModel.changeNick(newNick)
             }) {
-                Text(text = "Confirm")
+                Text(text = stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancelar))
             }
         }
     )
@@ -257,14 +273,14 @@ fun DeleteAccount(
     var password by remember { mutableStateOf("") }
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Delete Account") },
+        title = { Text(text = stringResource(R.string.delete_account)) },
         text = {
             Column {
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") }
+                    label = { Text(stringResource(R.string.password)) }
                 )
             }
 
@@ -273,12 +289,12 @@ fun DeleteAccount(
             Button(onClick = {
                 firebaseViewModel.deleteAccount(password)
             }) {
-                Text(text = "Confirm")
+                Text(text = stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancelar))
             }
         }
     )
@@ -291,15 +307,11 @@ fun InfoApp(
 ) {
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Info") },
+        title = { Text(text = stringResource(R.string.info)) },
         text = {
             Column {
                 Row {
-                    Text(text = "Aplicação desenvolvida por: \n\n" +
-                            "José Marques - 2018019295\n" +
-                            "Ana Ferreira - 2017011822\n" +
-                            "Carolina Rosa - 2017012933\n"
-                    )
+                    Text(text = stringResource(R.string.creditos))
                 }
             }
         },
@@ -307,7 +319,7 @@ fun InfoApp(
             Button(onClick = {
                 onDismissRequest()
             }) {
-                Text(text = "Ok")
+                Text(text = stringResource(R.string.ok))
             }
         }
     )
@@ -319,16 +331,14 @@ fun ChangePFP(
     onDismissRequest: () -> Unit
 ) {
     var newPFP by remember { mutableStateOf("") }
-    var user = firebaseViewModel.userUID.value
+    val user = firebaseViewModel.userUID.value
 
     AlertDialog(onDismissRequest = { onDismissRequest() },
-        title = { Text(text = "Change Profile Picture") },
+        title = { Text(text = stringResource(R.string.change_profile_picture)) },
         text = {
             Column {
-
                 UploadPhotoButton(onUriReady = {
                     newPFP = it
-                    Log.i("TAG", "ChangePFP: " + newPFP)
                     user?.let { firebaseViewModel.addPFPToFirestore(user, newPFP) }
                 }, type = "Profile" , picName = user.toString() )
             }
@@ -336,12 +346,12 @@ fun ChangePFP(
         },
         confirmButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Confirm")
+                Text(text = stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             Button(onClick = { onDismissRequest() }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancelar))
             }
         }
     )

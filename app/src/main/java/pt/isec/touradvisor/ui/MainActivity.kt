@@ -1,18 +1,13 @@
 package pt.isec.touradvisor.ui
 
 import android.Manifest
-import android.app.AlertDialog
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import org.osmdroid.config.Configuration
 import pt.isec.touradvisor.TourAdviserApp
 import pt.isec.touradvisor.ui.screens.MainScreen
 import pt.isec.touradvisor.ui.theme.TourAdvisorTheme
@@ -31,7 +26,7 @@ class MainActivity : ComponentActivity() {
     private val searchHistoryViewModel: SearchHistoryViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Configuration.getInstance().load(this, getSharedPreferences("OSM", MODE_PRIVATE))
+        org.osmdroid.config.Configuration.getInstance().load(this, getSharedPreferences("OSM", MODE_PRIVATE))
         setContent {
             TourAdvisorTheme {
                 MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel, searchHistoryViewModel = searchHistoryViewModel )
@@ -48,6 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         locationViewModel.stopLocationUpdates()
+        firebaseViewModel.stopObserver()
     }
 
     private fun verifyPermissions() : Boolean{
@@ -61,16 +57,16 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        if (!locationViewModel.coarseLocationPermission && !locationViewModel.fineLocationPermission) {
+        return if (!locationViewModel.coarseLocationPermission && !locationViewModel.fineLocationPermission) {
             basicPermissionsAuthorization.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
-            return false
+            false
         } else
-        return true
+            true
     }
 
     private val basicPermissionsAuthorization = registerForActivityResult(

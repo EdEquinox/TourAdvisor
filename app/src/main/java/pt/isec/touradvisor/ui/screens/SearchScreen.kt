@@ -16,8 +16,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pt.isec.touradviser.R
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
@@ -42,7 +44,7 @@ fun SearchScreen(
     var openCategoryCard by remember { mutableStateOf(false) }
     var selectedCategory: Category? by remember { mutableStateOf(null) }
     val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
-    val poisList by remember { mutableStateOf(firebaseViewModel.POIs) }
+    val poisList by remember { mutableStateOf(firebaseViewModel.pois) }
     var localList by remember { mutableStateOf(firebaseViewModel.locations) }
     var showPois by remember { mutableStateOf(true) }
     var showLocals by remember { mutableStateOf(false) }
@@ -53,31 +55,33 @@ fun SearchScreen(
 
     Column {
         Spacer(modifier = Modifier.height(70.dp))
-        Row (modifier = Modifier.fillMaxWidth().align(alignment = androidx.compose.ui.Alignment.CenterHorizontally)) {
+        Row (modifier = Modifier
+            .fillMaxWidth()
+            .align(alignment = androidx.compose.ui.Alignment.CenterHorizontally)) {
             Button(onClick = {
                 showPois = true
                 showCategories = false
                 showLocals = false
             }) {
-                Text(text = "POIS")
+                Text(text = stringResource(R.string.pois))
             }
             Button(onClick = {
                 showLocals = true
                 showCategories = false
                 showPois = false
             }) {
-                Text(text = "LOCALS")
+                Text(text = stringResource(R.string.locals))
             }
             Button(onClick = {
                 showCategories = true
                 showLocals = false
                 showPois = false
             }) {
-                Text(text = "CATEGORIES")
+                Text(text = stringResource(R.string.categories))
             }
         }
         if (searchedPOIs.value.isNotEmpty() && showPois){
-            Text(text = "Pois", fontSize = 30.sp, modifier = Modifier
+            Text(text = stringResource(id = R.string.pois), fontSize = 30.sp, modifier = Modifier
                 .padding(10.dp)
                 .fillMaxWidth())
             LazyColumn(content =  {
@@ -96,7 +100,7 @@ fun SearchScreen(
         }
 
         if (searchedLocals.value.isNotEmpty() && showLocals){
-            Text(text = "LOCALS")
+            Text(text = stringResource(id = R.string.locals))
             LazyColumn(content = {
                 items(searchedLocals.value.size, itemContent = {
                     Card {
@@ -110,7 +114,7 @@ fun SearchScreen(
             })
         }
         if (searchedCategories.value.isNotEmpty() && showCategories){
-            Text(text = "CATEGORIES")
+            Text(text = stringResource(id = R.string.categories))
             LazyColumn(content = {
                 items(searchedCategories.value.size, itemContent = {
                     Card {
@@ -125,7 +129,7 @@ fun SearchScreen(
         }
     }
     if (openPoiCard) {
-        selectedPOI?.let {
+        selectedPOI?.let { it ->
             ViewPOI(poi = it, onDismiss = { openPoiCard = false }, firebaseViewModel = firebaseViewModel, onSelect = {
                 avaliacao = Avaliacao(it["comment"].toString(), it["rating"] as Int, it["user"].toString(), it["poi"].toString())
                 firebaseViewModel.addAvaliacao(avaliacao?: Avaliacao("Error", 0, "Error", "Error"))
@@ -133,7 +137,7 @@ fun SearchScreen(
             })        }
     }
     if (openLocalCard) {
-        selectedLocal?.let {
+        selectedLocal?.let { it ->
             ViewLocation(location = it, onDismiss = { openLocalCard = false }, poisList = poisList.value, onSelect = {
                 openLocalCard = false
                 selectedPOI = it

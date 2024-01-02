@@ -75,7 +75,7 @@ class FStorageUtil {
                     checkAllListenersCompleted()
                 }
             listenerRegistrationPOIs = db.collection("POI")
-                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     if (firebaseFirestoreException != null) {
                         return@addSnapshotListener
                     } else {
@@ -132,7 +132,7 @@ class FStorageUtil {
             val pois = mutableListOf<POI>()
 
             db.collection("POI")
-                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     if (firebaseFirestoreException != null) {
                         return@addSnapshotListener
                     } else {
@@ -170,20 +170,6 @@ class FStorageUtil {
             listenerRegistrationCategorias?.remove()
             listenerRegistrationLocations?.remove()
         }
-
-// Storage
-
-        fun getFileFromAsset(assetManager: AssetManager, strName: String): InputStream? {
-            var istr: InputStream? = null
-            try {
-                istr = assetManager.open(strName)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            return istr
-        }
-
-//https://firebase.google.com/docs/storage/android/upload-files
 
         fun uploadFile(inputStream: InputStream,path:String, imgFile: String, onUploadComplete: (String) -> Unit) {
             val storage = Firebase.storage
@@ -267,7 +253,7 @@ class FStorageUtil {
             val ratings = mutableListOf<Avaliacao>()
 
             db.collection("Avaliacoes")
-                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     if (firebaseFirestoreException != null) {
                         return@addSnapshotListener
                     } else {
@@ -294,7 +280,7 @@ class FStorageUtil {
             val db = Firebase.firestore
 
             db.collection("Users").document(user)
-                .addSnapshotListener() { querySnapshot, firebaseFirestoreException ->
+                .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     if (firebaseFirestoreException != null) {
                         return@addSnapshotListener
                     } else {

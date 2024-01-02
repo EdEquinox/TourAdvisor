@@ -6,4 +6,7 @@ data class Avaliacao(
     var user : String,
     var poi : String
 ) {
+    override fun toString(): String {
+        return "$user: $comment"
+    }
 }

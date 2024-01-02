@@ -1,7 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,6 +61,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -83,7 +81,6 @@ import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.utils.firebase.FStorageUtil
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>, onSelect : (POI) -> Unit) {
     AlertDialog(
@@ -119,13 +116,12 @@ fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>, on
                 onDismiss()
             }
             ) {
-                Text(text = "Fechar")
+                Text(text = stringResource(R.string.fechar))
             }
         },
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewFilter(
     poisList: MutableState<List<POI>>,
@@ -171,7 +167,7 @@ fun ViewFilter(
                 onDismiss()
             }
             ) {
-                Text(text = "Fechar")
+                Text(text = stringResource(R.string.fechar))
             }
         },
     )
@@ -239,13 +235,14 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>, selecedLocal: L
 
 @Composable
 fun Ordenacao(
-    orderBy: List<String>,
+    orderBy: HashMap<Int, String>,
     localtionList: MutableState<List<Local>>,
     sortedLocal: MutableState<List<Local>>,
     locationViewModel: LocationViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf(orderBy[0]) }
+    var selected by remember { mutableIntStateOf(0) }
+    var text by remember { mutableStateOf(orderBy[selected]) }
 
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -253,28 +250,27 @@ fun Ordenacao(
         .padding(2.dp)
         .padding(start = 8.dp),
         contentAlignment = Alignment.CenterStart) {
-        Text(text = selected, fontSize = 12.sp, modifier = Modifier
+        Text(text = text.toString(), fontSize = 12.sp, modifier = Modifier
             .clickable(onClick = { expanded = true })
             .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
             .padding(5.dp)
             .fillMaxWidth())
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            orderBy.forEach { s ->
+            orderBy.forEach { index ->
                 DropdownMenuItem(onClick = {
                     expanded = false
-                    selected = s
-                    when (s) {
-                        "- Distância" -> sortedLocal.value = localtionList.value.sortedByDescending { locationViewModel.calculateDistance(
+                    selected = index.key
+                    when (index.key) {
+                        0-> sortedLocal.value = localtionList.value.sortedByDescending { locationViewModel.calculateDistance(
                             GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)
                         ) }
-                        "+ Distância" -> sortedLocal.value = localtionList.value.sortedBy { locationViewModel.calculateDistance(
+                        1 -> sortedLocal.value = localtionList.value.sortedBy { locationViewModel.calculateDistance(
                             GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)
                         ) }
-                        "A-Z" -> sortedLocal.value = localtionList.value.sortedBy { it.name }
-                        "Z-A" -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
+                        2 -> sortedLocal.value = localtionList.value.sortedBy { it.name }
+                        3 -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
                     }
-                    Log.i("ola", sortedLocal.value.toString())
-                },text = { Text(s) })
+                },text = { Text(index.value) })
             }
         }
     }
@@ -314,6 +310,7 @@ fun AddButton(
     var showDialog by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf("") }
     val currentCont = LocalContext.current
+    val fields = stringResource(id = R.string.please_fill_all_fields)
 
     Box(modifier = Modifier
         .height(150.dp)
@@ -369,7 +366,7 @@ fun AddButton(
             var data = hashMapOf<String,Any>()
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text(text = "Adicionar $tipo", fontSize = 20.sp) },
+                title = { Text(text = stringResource(R.string.adicionar, tipo), fontSize = 20.sp) },
                 text = {
                     Column {      //substituir por um switch case
 
@@ -390,21 +387,21 @@ fun AddButton(
                     Button(onClick = {
                         if (tipo == "Localização") {
                             if (data["nome"] == "" || data["descricao"] == "" || data["geopoint"] == ""){
-                                Toast.makeText(currentCont, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addLocationToFirestore(data)
                         }
                         if (tipo == "Categoria"){
                             if (data["nome"] == "" || data["descricao"] == "" || data["imagem"] == ""){
-                                Toast.makeText(currentCont, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addCategoryToFirestore(data)
                         }
                         if (tipo == "Local de Interesse"){
                             if (data["nome"] == "" || data["descricao"] == "" || data["categoria"] == "" || data["location"] == "" || data["geoPoint"] == ""){
-                                Toast.makeText(currentCont, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addPOIToFirestore(data)
@@ -412,14 +409,14 @@ fun AddButton(
                         showDialog = false
                     }
                     ) {
-                        Text(text = "Adicionar")
+                        Text(text = stringResource(id = R.string.adicionar))
                     }
                 },
                 dismissButton = {
                     Button(onClick = {
                         showDialog = false
                     }) {
-                        Text(text = "Cancelar")
+                        Text(text = stringResource(R.string.cancelar))
                     }
                 },
             )
@@ -476,18 +473,18 @@ fun dialogLocalInteresse(
     OutlinedTextField(
         value = nome,
         onValueChange = { nome = it },
-        label = { Text("Nome") }
+        label = { Text(stringResource(R.string.nome)) }
     )
     OutlinedTextField(
         value = descricao,
         onValueChange = { descricao = it },
-        label = { Text("Descrição") },
+        label = { Text(stringResource(R.string.descri_o)) },
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
     )
     Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Local atual?", fontSize = 13.sp)
+    Text(text = stringResource(R.string.local_atual), fontSize = 13.sp)
     Switch(checked = checkedLoc, onCheckedChange = {
         checkedLoc = it
     })
@@ -498,15 +495,15 @@ fun dialogLocalInteresse(
         OutlinedTextField(
             value = latitude.toString(),
             onValueChange = { latitude = it.toDouble() },
-            label = { Text("Latitude") }
+            label = { Text(stringResource(R.string.latitude)) }
         )
         OutlinedTextField(
             value = longitude.toString(),
             onValueChange = { longitude = it.toDouble() },
-            label = { Text("Longitude") }
+            label = { Text(stringResource(R.string.longitude)) }
         )
     }
-    Text(text = "Local:", fontSize = 13.sp)
+    Text(text = stringResource(R.string.local), fontSize = 13.sp)
     Spacer(modifier = Modifier.height(3.dp))
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
 
@@ -527,7 +524,7 @@ fun dialogLocalInteresse(
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Categoria:", fontSize = 13.sp)
+    Text(text = stringResource(R.string.categoria), fontSize = 13.sp)
     Spacer(modifier = Modifier.height(3.dp))
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
         Text(
@@ -572,12 +569,12 @@ fun dialogCategoria(): HashMap<String, Any> {
     OutlinedTextField(
         value = name,
         onValueChange = { name = it },
-        label = { Text("Nome") }
+        label = { Text(stringResource(id = R.string.nome )) }
     )
     OutlinedTextField(
         value = description,
         onValueChange = { description = it },
-        label = { Text("Descrição") }
+        label = { Text(stringResource(id = R.string.descri_o )) }
     )
 
     UploadPhotoButton(onUriReady = { image = it }, type = "category", picName = name)
@@ -604,14 +601,14 @@ fun dialogLocalizacao(
     OutlinedTextField(
         value = name,
         onValueChange = { name = it },
-        label = { Text("Nome") }
+        label = { Text(stringResource(id = R.string.nome )) }
     )
     OutlinedTextField(
         value = descricao,
         onValueChange = { descricao = it },
-        label = { Text("Descrição") }
+        label = { Text(stringResource(id = R.string.descri_o )) }
     )
-    Text(text = "Local atual?", fontSize = 13.sp)
+    Text(text = stringResource(id = R.string.local_atual ), fontSize = 13.sp)
     Switch(checked = checkedLoc, onCheckedChange = {
         checkedLoc = it
     })
@@ -622,12 +619,12 @@ fun dialogLocalizacao(
         OutlinedTextField(
             value = latitude.toString(),
             onValueChange = { latitude = it.toDouble() },
-            label = { Text("Latitude") }
+            label = { Text(stringResource(id = R.string.latitude)) }
         )
         OutlinedTextField(
             value = longitude.toString(),
             onValueChange = { longitude = it.toDouble() },
-            label = { Text("Longitude") }
+            label = { Text(stringResource(id = R.string.longitude)) }
         )
     }
     UploadPhotoButton(onUriReady = { image = it }, type = "location", picName = name)
@@ -656,7 +653,7 @@ fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: Strin
     }
 
     Button(onClick = { launcher.launch("image/*") }) {
-        Text("Upload Photo")
+        Text(stringResource(R.string.upload_photo))
     }
 
 }
@@ -668,6 +665,7 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
     val context = LocalContext.current
     var data = hashMapOf<String,Any>()
     val own by remember { mutableStateOf(poi?.user == firebaseViewModel.userUID.value) }
+    val fields = stringResource(id = R.string.please_fill_all_fields)
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
@@ -693,7 +691,7 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
                         OutlinedTextField(
                             value = comment,
                             onValueChange = { comment = it },
-                            label = { Text("Comentário") },
+                            label = { Text(stringResource(R.string.coment_rio)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(100.dp)
@@ -728,7 +726,7 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
                 onDismiss()
             }
             ) {
-                Text(text = "Fechar")
+                Text(text = stringResource(id = R.string.cancelar ))
             }
         },
         confirmButton = {
@@ -739,17 +737,17 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
                     }
                     onDismiss()
                 }) {
-                    Text(text = "Remover")
+                    Text(text = stringResource(R.string.remover))
                 }
             } else{
                 Button(onClick = {
                     if (data["comment"] != "" && data["rating"] != 0){
                         onSelect(data)
                     } else {
-                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
                     }
                 }) {
-                    Text(text = "Avaliar")
+                    Text(text = stringResource(R.string.avaliar))
                 }
             }
 

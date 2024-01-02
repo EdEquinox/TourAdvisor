@@ -1,3 +1,44 @@
 <resources>
     <string name="app_name">TourAdviser</string>
+    <string name="a_z" translatable="false">A-Z</string>
+    <string name="z_a" translatable="false">Z-A</string>
+    <string name="plus_dist">+ Distance</string>
+    <string name="minus_dist">- Distance</string>
+    <string name="procurar">Search</string>
+    <string name="email" translatable="false">Email</string>
+    <string name="password" translatable="false">Password</string>
+    <string name="please_fill_all_fields">Please fill all fields</string>
+    <string name="welcome_to_tour_advisor">Welcome to Tour Advisor!</string>
+    <string name="login" translatable="false">Login</string>
+    <string name="register">Register</string>
+    <string name="fechar">Close</string>
+    <string name="adicionar">Add %1$s</string>
+    <string name="cancelar">Cancel</string>
+    <string name="nome">Name</string>
+    <string name="local_atual">Current location?</string>
+    <string name="latitude" translatable="false">Latitude</string>
+    <string name="longitude" translatable="false">Longitude</string>
+    <string name="local" translatable="false">Local:</string>
+    <string name="upload_photo">Upload Photo</string>
+    <string name="coment_rio">Comment</string>
+    <string name="avaliar">Rate</string>
+    <string name="pois">Points of Interest</string>
+    <string name="locals">Locals</string>
+    <string name="categories">Categories</string>
+    <string name="change_profile_picture">Change profile picture</string>
+    <string name="change_password">Change password</string>
+    <string name="change_email">Change email</string>
+    <string name="change_nickname">Change nickname</string>
+    <string name="delete_account">Delete account</string>
+    <string name="info" translatable="false">Info</string>
+    <string name="password_antiga">Old password</string>
+    <string name="password_nova">New password</string>
+    <string name="confirm">Confirm</string>
+    <string name="email_novo">New email</string>
+    <string name="nickname_novo">New nickname</string>
+    <string name="creditos" translatable="false">Aplicação desenvolvida por: \n\nJosé Marques - 2018019295\nAna Ferreira - 2017011822\nCarolina Rosa - 2017012933\n\n</string>
+    <string name="ok" translatable="false">OK</string>
+    <string name="descri_o">Description</string>
+    <string name="categoria">Category:</string>
+    <string name="remover">Remove</string>
 </resources>

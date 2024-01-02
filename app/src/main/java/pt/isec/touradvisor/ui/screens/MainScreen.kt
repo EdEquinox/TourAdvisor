@@ -1,7 +1,6 @@
 package pt.isec.touradvisor.ui.screens
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -45,7 +44,7 @@ fun MainScreen(
 
     val currentScreen by navController.currentBackStackEntryAsState()
 
-    navController.addOnDestinationChangedListener() { controller, destination, arguments ->
+    navController.addOnDestinationChangedListener { controller, destination, arguments ->
         showSettingsAction = (destination.route == Screens.PROFILE.route)
         showLogoutAction = (destination.route == Screens.PROFILE.route)
     }
@@ -79,7 +78,6 @@ fun MainScreen(
                         if (showLogoutAction)
                             IconButton(onClick = {
                                 firebaseViewModel.signOut()
-                                Log.d("MainScreen", "Logout")
                                 navController.navigate(Screens.LOGIN.route)
                             }) {
                                 Icon(
@@ -100,7 +98,10 @@ fun MainScreen(
                 LandingScreen(navController = navController, firebaseViewModel = firebaseViewModel, locationViewModel = locationViewModel)
             }
             composable(Screens.HOME.route) {
-                HomeScreen(navController = navController ,locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel, searchHistoryViewModel = searchHistoryViewModel  ) {
+                HomeScreen(navController = navController ,
+                    locationViewModel = locationViewModel,
+                    firebaseViewModel = firebaseViewModel,
+                    searchHistoryViewModel = searchHistoryViewModel) {
                     navController.navigate(
                         Screens.LOGIN.route
                     )

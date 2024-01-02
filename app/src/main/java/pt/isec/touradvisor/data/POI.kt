@@ -21,8 +21,7 @@ data class POI(
     }
 
     @Composable
-    fun toImage() : Painter {
-        val painter = rememberImagePainter(data = this.image)
-        return painter
+    fun toImage(): Painter {
+        return rememberImagePainter(data = image)
     }
 }

@@ -14,9 +14,8 @@ data class Category (
     }
 
     @Composable
-    fun toImage() : Painter {
-        val painter = rememberImagePainter(data = this.imagem)
-        return painter
+    fun toImage(): Painter {
+        return rememberImagePainter(data = imagem)
     }
 
 

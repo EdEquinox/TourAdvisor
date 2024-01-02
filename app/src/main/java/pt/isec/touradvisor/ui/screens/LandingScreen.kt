@@ -30,8 +30,6 @@ fun LandingScreen(
     firebaseViewModel: FirebaseViewModel,
     locationViewModel: LocationViewModel
 ) {
-
-
     val infiniteTransition = rememberInfiniteTransition(label = "animation")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -58,15 +56,13 @@ fun LandingScreen(
     LaunchedEffect(key1 = true) {
         if (firebaseViewModel.userUID.value == null) {
             delay(2000)
-            navController.navigate(Screens.LOGIN.route) // navigate to LoginScreen after delay
+            navController.navigate(Screens.LOGIN.route)
         } else{
-            locationViewModel.stopLocationUpdates()
-            locationViewModel.startLocationUpdates()
             firebaseViewModel.startObserver()
             firebaseViewModel.getUserPOIs()
             firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
             firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value?:"")
-            navController.navigate(Screens.HOME.route) // navigate to HomeScreen after delay
+            navController.navigate(Screens.HOME.route)
         }
     }
 }

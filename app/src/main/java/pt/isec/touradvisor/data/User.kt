@@ -15,7 +15,7 @@ data class User(
 fun FirebaseUser.toUser() : User {
     val displayName = this.displayName ?: "User"
     val email = this.email ?: ""
-    val picture = this.photoUrl.toString() ?:""
+    val picture = this.photoUrl.toString()
 
     return User(displayName, email, picture)
 }

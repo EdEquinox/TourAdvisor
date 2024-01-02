@@ -93,9 +93,9 @@ class FirebaseViewModel : ViewModel() {
     val categories : MutableState<List<Category>>
         get() = _categories
 
-    private val _POIs = mutableStateOf(listOf<POI>())
-    val POIs : MutableState<List<POI>>
-        get() = _POIs
+    private val _pois = mutableStateOf(listOf<POI>())
+    val pois : MutableState<List<POI>>
+        get() = _pois
 
     private val _locations = mutableStateOf(listOf<Local>())
     val locations : MutableState<List<Local>>
@@ -163,7 +163,7 @@ class FirebaseViewModel : ViewModel() {
                     } else{
                         Log.i("OBSERVER", "not null")
                         _categories.value = c
-                        _POIs.value = p
+                        _pois.value = p
                         _locations.value = l
                         _sortedLocal.value = l
                         continuation.resume(true)

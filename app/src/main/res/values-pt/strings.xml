@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TourAdviser</string>
+    <string name="plus_dist">+ Distância</string>
+    <string name="minus_dist">- Distância</string>
+    <string name="procurar">Procurar</string>
+    <string name="please_fill_all_fields">Por favor preenche todos os campos</string>
+    <string name="welcome_to_tour_advisor">Ben-vindo ao Tour Advisor!</string>
+    <string name="register">Registar</string>
+    <string name="fechar">Fechar</string>
+    <string name="adicionar">Adicionar %1$s</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="nome">Nome</string>
+    <string name="descri_o">Descrição</string>
+    <string name="local_atual">Localização atual?</string>
+    <string name="categoria">Categoria:</string>
+    <string name="upload_photo">Carregar Foto</string>
+    <string name="coment_rio">Comentário</string>
+    <string name="remover">Remover</string>
+    <string name="avaliar">Avaliar</string>
+    <string name="pois">Pontos de Interesse</string>
+    <string name="locals">Locais</string>
+    <string name="categories">Categorias</string>
+    <string name="change_profile_picture">Mudar imagem de perfil</string>
+    <string name="change_password">Mudar password</string>
+    <string name="change_email">Mudar email</string>
+    <string name="change_nickname">Mudar nome</string>
+    <string name="delete_account">Apagtar conta</string>
+    <string name="password_antiga">Password antiga</string>
+    <string name="password_nova">Password nova</string>
+    <string name="confirm">Confirmar</string>
+    <string name="email_novo">Email novo</string>
+    <string name="nickname_novo">Nome novo</string>
+</resources>
