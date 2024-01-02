@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -82,30 +83,41 @@ import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 import pt.isec.touradvisor.utils.firebase.FStorageUtil
 
 @Composable
-fun ViewLocation(location: Local, onDismiss: () -> Unit, poisList: List<POI>, onSelect : (POI) -> Unit) {
+fun ViewLocation(
+    location: Local,
+    onDismiss: () -> Unit,
+    poisList: List<POI>,
+    onSelect: (POI) -> Unit
+) {
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         onDismissRequest = { onDismiss() },
-        title = { Text(text = location.name?:"", fontSize = 20.sp) },
+        title = { Text(text = location.name ?: "", fontSize = 20.sp) },
         text = {
             LazyColumn(content = {
                 item {
-                    Text(text = location.description?:"", fontSize = 14.sp)
-                    Image(painter = location.toImage(), contentDescription = "POI Image", modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp))
+                    Text(text = location.description ?: "", fontSize = 14.sp)
+                    Image(
+                        painter = location.toImage(),
+                        contentDescription = "POI Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
                 }
                 poisList.forEach {
                     item {
-                        if (it.location?.name == location.name){
-                            POICard(poi = it){
+                        if (it.location?.name == location.name) {
+                            POICard(poi = it) {
                                 onSelect(it)
                             }
-                            Spacer(modifier = Modifier
-                                .height(8.dp)
-                                .background(Color(0, 0, 0, 0)))
+                            Spacer(
+                                modifier = Modifier
+                                    .height(8.dp)
+                                    .background(colorResource(id = R.color.transparent))
+                            )
                         }
                     }
                 }
@@ -129,15 +141,14 @@ fun ViewFilter(
     category: String,
     onDismiss: () -> Unit,
     onSelect: (POI) -> Unit
-)
-{
+) {
     var categoria by remember { mutableStateOf(Category()) }
-    for (cat in categorias.value){
-        if (cat.nome == category){
+    for (cat in categorias.value) {
+        if (cat.nome == category) {
             categoria = cat
         }
     }
-    poisList.value.filter{ it.category?.nome == category }
+    poisList.value.filter { it.category?.nome == category }
     AlertDialog(
         modifier = Modifier
             .fillMaxWidth()
@@ -146,13 +157,17 @@ fun ViewFilter(
         title = { Text(text = category, fontSize = 20.sp) },
         text = {
             Column {
-                Image(painter = rememberImagePainter(data = categoria.imagem ), contentDescription = "Filter Image", modifier = Modifier
-                    .size(40.dp))
+                Image(
+                    painter = rememberImagePainter(data = categoria.imagem),
+                    contentDescription = "Filter Image",
+                    modifier = Modifier
+                        .size(40.dp)
+                )
                 LazyColumn(content = {
                     poisList.value.forEach {
                         item {
-                            if (it.category?.nome == category){
-                                POICard(poi = it){
+                            if (it.category?.nome == category) {
+                                POICard(poi = it) {
                                     onSelect(it)
                                 }
                             }
@@ -202,7 +217,7 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>, selecedLocal: L
         }, update = { mapView ->
             mapView.overlays.clear()
             for (poi in poisList) {
-                if (poi.location?.name == selecedLocal.name){
+                if (poi.location?.name == selecedLocal.name) {
                     mapView.overlays.add(
                         Marker(mapView).apply {
                             position =
@@ -242,35 +257,45 @@ fun Ordenacao(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selected by remember { mutableIntStateOf(0) }
-    var text by remember { mutableStateOf(orderBy[selected]) }
+    val text by remember { mutableStateOf(orderBy[selected]) }
 
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .height(50.dp)
-        .padding(2.dp)
-        .padding(start = 8.dp),
-        contentAlignment = Alignment.CenterStart) {
-        Text(text = text.toString(), fontSize = 12.sp, modifier = Modifier
-            .clickable(onClick = { expanded = true })
-            .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
-            .padding(5.dp)
-            .fillMaxWidth())
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .padding(2.dp)
+            .padding(start = 8.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = text.toString(), fontSize = 12.sp, modifier = Modifier
+                .clickable(onClick = { expanded = true })
+                .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
+                .padding(5.dp)
+                .fillMaxWidth()
+        )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             orderBy.forEach { index ->
                 DropdownMenuItem(onClick = {
                     expanded = false
                     selected = index.key
                     when (index.key) {
-                        0-> sortedLocal.value = localtionList.value.sortedByDescending { locationViewModel.calculateDistance(
-                            GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)
-                        ) }
-                        1 -> sortedLocal.value = localtionList.value.sortedBy { locationViewModel.calculateDistance(
-                            GeoPoint(0.0,0.0), it.geoPoint?: GeoPoint(0.0,0.0)
-                        ) }
+                        0 -> sortedLocal.value = localtionList.value.sortedByDescending {
+                            locationViewModel.calculateDistance(
+                                GeoPoint(0.0, 0.0), it.geoPoint ?: GeoPoint(0.0, 0.0)
+                            )
+                        }
+
+                        1 -> sortedLocal.value = localtionList.value.sortedBy {
+                            locationViewModel.calculateDistance(
+                                GeoPoint(0.0, 0.0), it.geoPoint ?: GeoPoint(0.0, 0.0)
+                            )
+                        }
+
                         2 -> sortedLocal.value = localtionList.value.sortedBy { it.name }
                         3 -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
                     }
-                },text = { Text(index.value) })
+                }, text = { Text(index.value) })
             }
         }
     }
@@ -282,16 +307,18 @@ fun TabFilter(
     modifier: Modifier = Modifier,
     onFilter: (Category) -> Unit
 ) {
-    LazyRow(modifier = modifier
-        .fillMaxWidth()
-        .height(50.dp)
-        .padding(8.dp),
+    LazyRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically) {
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         items(categorias.value) {
             IconButton(onClick = {
                 onFilter(it)
-            }){
+            }) {
                 Image(painter = it.toImage(), contentDescription = "Filter Image")
             }
         }
@@ -312,58 +339,68 @@ fun AddButton(
     val currentCont = LocalContext.current
     val fields = stringResource(id = R.string.please_fill_all_fields)
 
-    Box(modifier = Modifier
-        .height(150.dp)
-        .width(180.dp)
-        .offset(y = (40).dp)) {
+    Box(
+        modifier = Modifier
+            .height(150.dp)
+            .width(180.dp)
+            .offset(y = (40).dp)
+    ) {
         IconButton(
             onClick = { isExpanded = !isExpanded },
             modifier = Modifier
                 .align(Alignment.Center)
-                .background(Color(68, 138, 255, 255), CircleShape)) {
+                .background(colorResource(id = R.color.medium_sky_blue), CircleShape)
+        ) {
             Icon(Icons.Default.Add, contentDescription = "Main button")
         }
 
         if (isExpanded) {
 
-            IconButton(onClick = {
-                isExpanded = !isExpanded
-                showDialog = true
-                tipo = "Localização"
-            },
+            IconButton(
+                onClick = {
+                    isExpanded = !isExpanded
+                    showDialog = true
+                    tipo = "Localização"
+                },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .clip(shape = CircleShape)
-                    .background(Color(60, 59, 59, 100), CircleShape)
+                    .background(colorResource(id = R.color.semi_transparent_dark_gray), CircleShape)
             ) {
                 Icon(Icons.Default.AddLocationAlt, contentDescription = "Location button")
             }
 
-            IconButton(onClick = { isExpanded = !isExpanded
-                showDialog = true
-                tipo = "Categoria" },
+            IconButton(
+                onClick = {
+                    isExpanded = !isExpanded
+                    showDialog = true
+                    tipo = "Categoria"
+                },
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .clip(shape = CircleShape)
-                    .background(Color(60, 59, 59, 100), CircleShape)
+                    .background(colorResource(id = R.color.semi_transparent_dark_gray), CircleShape)
             ) {
                 Icon(Icons.Default.Category, contentDescription = "Category button")
             }
 
-            IconButton(onClick = { isExpanded = !isExpanded
-                showDialog = true
-                tipo = "Local de Interesse" },
+            IconButton(
+                onClick = {
+                    isExpanded = !isExpanded
+                    showDialog = true
+                    tipo = "Local de Interesse"
+                },
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .clip(shape = CircleShape)
-                    .background(Color(60, 59, 59, 100), CircleShape)
+                    .background(colorResource(id = R.color.semi_transparent_dark_gray), CircleShape)
             ) {
                 Icon(Icons.Default.Stadium, contentDescription = "POI button")
             }
         }
 
         if (showDialog) {
-            var data = hashMapOf<String,Any>()
+            var data = hashMapOf<String, Any>()
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 title = { Text(text = stringResource(R.string.adicionar, tipo), fontSize = 20.sp) },
@@ -373,11 +410,16 @@ fun AddButton(
                         if (tipo == "Localização") {
                             data = dialogLocalizacao(locationViewModel)
                         }
-                        if (tipo == "Categoria"){
+                        if (tipo == "Categoria") {
                             data = dialogCategoria()
                         }
-                        if (tipo == "Local de Interesse"){
-                            data = dialogLocalInteresse(categorias, locations, firabaseViewModel, locationViewModel)
+                        if (tipo == "Local de Interesse") {
+                            data = dialogLocalInteresse(
+                                categorias,
+                                locations,
+                                firabaseViewModel,
+                                locationViewModel
+                            )
                         }
 
 
@@ -386,21 +428,21 @@ fun AddButton(
                 confirmButton = {
                     Button(onClick = {
                         if (tipo == "Localização") {
-                            if (data["nome"] == "" || data["descricao"] == "" || data["geopoint"] == ""){
+                            if (data["nome"] == "" || data["descricao"] == "" || data["geopoint"] == "") {
                                 Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addLocationToFirestore(data)
                         }
-                        if (tipo == "Categoria"){
-                            if (data["nome"] == "" || data["descricao"] == "" || data["imagem"] == ""){
+                        if (tipo == "Categoria") {
+                            if (data["nome"] == "" || data["descricao"] == "" || data["imagem"] == "") {
                                 Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addCategoryToFirestore(data)
                         }
-                        if (tipo == "Local de Interesse"){
-                            if (data["nome"] == "" || data["descricao"] == "" || data["categoria"] == "" || data["location"] == "" || data["geoPoint"] == ""){
+                        if (tipo == "Local de Interesse") {
+                            if (data["nome"] == "" || data["descricao"] == "" || data["categoria"] == "" || data["location"] == "" || data["geoPoint"] == "") {
                                 Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
@@ -428,11 +470,12 @@ fun AddButton(
 fun MyLocButton(
     locationViewModel: LocationViewModel,
     onLoc: (GeoPoint) -> Unit,
-){
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .height(450.dp)
-        .padding(end = 10.dp),
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(450.dp)
+            .padding(end = 10.dp),
     ) {
         IconButton(
             onClick = {
@@ -443,7 +486,7 @@ fun MyLocButton(
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .background(Color(118, 156, 219, 149), CircleShape)
+                .background(colorResource(id = R.color.semi_transparent_color), CircleShape)
         ) {
             Icon(Icons.Default.MyLocation, contentDescription = "My location button")
         }
@@ -569,12 +612,12 @@ fun dialogCategoria(): HashMap<String, Any> {
     OutlinedTextField(
         value = name,
         onValueChange = { name = it },
-        label = { Text(stringResource(id = R.string.nome )) }
+        label = { Text(stringResource(id = R.string.nome)) }
     )
     OutlinedTextField(
         value = description,
         onValueChange = { description = it },
-        label = { Text(stringResource(id = R.string.descri_o )) }
+        label = { Text(stringResource(id = R.string.descri_o)) }
     )
 
     UploadPhotoButton(onUriReady = { image = it }, type = "category", picName = name)
@@ -601,14 +644,14 @@ fun dialogLocalizacao(
     OutlinedTextField(
         value = name,
         onValueChange = { name = it },
-        label = { Text(stringResource(id = R.string.nome )) }
+        label = { Text(stringResource(id = R.string.nome)) }
     )
     OutlinedTextField(
         value = descricao,
         onValueChange = { descricao = it },
-        label = { Text(stringResource(id = R.string.descri_o )) }
+        label = { Text(stringResource(id = R.string.descri_o)) }
     )
-    Text(text = stringResource(id = R.string.local_atual ), fontSize = 13.sp)
+    Text(text = stringResource(id = R.string.local_atual), fontSize = 13.sp)
     Switch(checked = checkedLoc, onCheckedChange = {
         checkedLoc = it
     })
@@ -640,17 +683,17 @@ fun dialogLocalizacao(
 fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: String) {
     val context = LocalContext.current
     val uri = remember { mutableStateOf("") }
-    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
-            selectedUri: Uri? ->
-        selectedUri?.let {
-            context.contentResolver.openInputStream(it)?.let { inputStream ->
-                FStorageUtil.uploadFile(inputStream, type,picName){ downloadUrl ->
-                    uri.value = downloadUrl
-                    onUriReady(downloadUrl)
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { selectedUri: Uri? ->
+            selectedUri?.let {
+                context.contentResolver.openInputStream(it)?.let { inputStream ->
+                    FStorageUtil.uploadFile(inputStream, type, picName) { downloadUrl ->
+                        uri.value = downloadUrl
+                        onUriReady(downloadUrl)
+                    }
                 }
             }
         }
-    }
 
     Button(onClick = { launcher.launch("image/*") }) {
         Text(stringResource(R.string.upload_photo))
@@ -659,11 +702,16 @@ fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: Strin
 }
 
 @Composable
-fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>) -> Unit, firebaseViewModel: FirebaseViewModel){
+fun ViewPOI(
+    poi: POI?,
+    onDismiss: () -> Unit,
+    onSelect: (HashMap<String, Any>) -> Unit,
+    firebaseViewModel: FirebaseViewModel
+) {
     var comment by remember { mutableStateOf("") }
     var stars by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    var data = hashMapOf<String,Any>()
+    var data = hashMapOf<String, Any>()
     val own by remember { mutableStateOf(poi?.user == firebaseViewModel.userUID.value) }
     val fields = stringResource(id = R.string.please_fill_all_fields)
     AlertDialog(
@@ -673,21 +721,25 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
         onDismissRequest = { onDismiss() },
         title = {
             if (poi != null) {
-                Text(text = poi.name?:"", fontSize = 20.sp)
+                Text(text = poi.name ?: "", fontSize = 20.sp)
             }
         },
         text = {
             LazyColumn(content = {
                 item {
                     if (poi != null) {
-                        Text(text = poi.description?:"", fontSize = 14.sp, maxLines = 3)
+                        Text(text = poi.description ?: "", fontSize = 14.sp, maxLines = 3)
                     }
                     if (poi != null) {
-                        Image(painter = poi.toImage(), contentDescription = "POI Image", modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp))
+                        Image(
+                            painter = poi.toImage(),
+                            contentDescription = "POI Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                        )
                     }
-                    if (!own){
+                    if (!own) {
                         OutlinedTextField(
                             value = comment,
                             onValueChange = { comment = it },
@@ -726,11 +778,11 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
                 onDismiss()
             }
             ) {
-                Text(text = stringResource(id = R.string.cancelar ))
+                Text(text = stringResource(id = R.string.cancelar))
             }
         },
         confirmButton = {
-            if (own){
+            if (own) {
                 Button(onClick = {
                     if (poi != null) {
                         firebaseViewModel.removePoiFromFirestore(poi.name!!)
@@ -739,9 +791,9 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
                 }) {
                     Text(text = stringResource(R.string.remover))
                 }
-            } else{
+            } else {
                 Button(onClick = {
-                    if (data["comment"] != "" && data["rating"] != 0){
+                    if (data["comment"] != "" && data["rating"] != 0) {
                         onSelect(data)
                     } else {
                         Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
@@ -757,7 +809,7 @@ fun ViewPOI(poi: POI? , onDismiss: () -> Unit, onSelect : (HashMap<String, Any>)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryCard(category: Category,onClick: () -> Unit = {}) {
+fun CategoryCard(category: Category, onClick: () -> Unit = {}) {
 
     Card(
         modifier = Modifier

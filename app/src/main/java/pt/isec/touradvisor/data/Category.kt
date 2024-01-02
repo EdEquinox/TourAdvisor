@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
 
-data class Category (
+data class Category(
     val nome: String? = null,
     val descricao: String? = null,
     val imagem: String? = null

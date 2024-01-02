@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,7 +85,7 @@ fun HomeScreen(
     var mapCenter by remember { mutableStateOf(geoPoint) }
     var query by remember { mutableStateOf("") }
     var active by remember { mutableStateOf(false) }
-    var searchHistory by remember{ mutableStateOf(searchHistoryViewModel.searchHistory)}
+    var searchHistory by remember { mutableStateOf(searchHistoryViewModel.searchHistory) }
     var searchTrue: Boolean by remember { mutableStateOf(false) }
     var openCardDialog by remember { mutableStateOf(false) }
     val poisList by remember { mutableStateOf(firebaseViewModel.pois) }
@@ -101,21 +102,21 @@ fun HomeScreen(
         put(1, zaRes)
         put(2, plusDistRes)
         put(3, minusDistRes)
-    } // 0 -> A-Z, 1 -> Z-A, 2 -> +Dist, 3 -> -Dist}
+    }
     val sortedLocal by remember { mutableStateOf(firebaseViewModel.sortedLocal) }
     var categoriaDialog by remember { mutableStateOf(false) }
     var openPOIdialog by remember { mutableStateOf(false) }
     var selectedPOI: POI? by remember { mutableStateOf(null) }
-    var avaliacao:Avaliacao? by remember { mutableStateOf(null) }
+    var avaliacao: Avaliacao? by remember { mutableStateOf(null) }
     val pfp by remember { mutableStateOf(firebaseViewModel.myPfp) }
-    var searchedPOIs : List<POI>?
-    var searchedLocations : List<Local>?
-    var searchedCategories : List<Category>?
+    var searchedPOIs: List<POI>?
+    var searchedLocations: List<Local>?
+    var searchedCategories: List<Category>?
     val configuration = LocalConfiguration.current
-    val portrait = remember{ mutableIntStateOf(configuration.orientation) }
+    val portrait = remember { mutableIntStateOf(configuration.orientation) }
 
-    LaunchedEffect(key1 = user){
-        if (user == null){
+    LaunchedEffect(key1 = user) {
+        if (user == null) {
             onLogout()
         }
         locationViewModel.startLocationUpdates()
@@ -124,18 +125,24 @@ fun HomeScreen(
             mapCenter = geoPoint
         }
     }
+    locationViewModel.startLocationUpdates()
+    locationViewModel.currentLocation.observeForever {
+        geoPoint = GeoPoint(it.latitude, it.longitude)
+        mapCenter = geoPoint
+    }
 
-    if (portrait.intValue == Configuration.ORIENTATION_LANDSCAPE){
+    if (portrait.intValue == Configuration.ORIENTATION_LANDSCAPE) {
         Row(
             modifier = modifier
                 .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(modifier = Modifier
-                .width(600.dp)
-                .fillMaxHeight()
-                .clipToBounds()
+            Box(
+                modifier = Modifier
+                    .width(600.dp)
+                    .fillMaxHeight()
+                    .clipToBounds()
             ) {
                 SearchBar(
                     query = query,
@@ -148,9 +155,24 @@ fun HomeScreen(
                         searchTrue = true
                         searchHistoryViewModel.addSearch(query)
                         searchHistory = searchHistoryViewModel.searchHistory
-                        searchedCategories = searchedCategories?.filter { it.nome?.contains(query, ignoreCase = true) == true }
-                        searchedLocations = searchedLocations?.filter { it.name?.contains(query, ignoreCase = true) == true }
-                        searchedPOIs = searchedPOIs?.filter { it.name?.contains(query, ignoreCase = true) == true }
+                        searchedCategories = searchedCategories?.filter {
+                            it.nome?.contains(
+                                query,
+                                ignoreCase = true
+                            ) == true
+                        }
+                        searchedLocations = searchedLocations?.filter {
+                            it.name?.contains(
+                                query,
+                                ignoreCase = true
+                            ) == true
+                        }
+                        searchedPOIs = searchedPOIs?.filter {
+                            it.name?.contains(
+                                query,
+                                ignoreCase = true
+                            ) == true
+                        }
                         searchHistoryViewModel.searchedCategories.value = searchedCategories!!
                         searchHistoryViewModel.searchedLocals.value = searchedLocations!!
                         searchHistoryViewModel.searchedPOIs.value = searchedPOIs!!
@@ -159,48 +181,57 @@ fun HomeScreen(
                     active = active,
                     onActiveChange = { active = it },
                     placeholder = { Text(text = stringResource(R.string.procurar)) },
-                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon") },
-                    trailingIcon = { if (active) {
+                    leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close Icon",
-                            modifier = Modifier.clickable {
-                                query = ""
-                                active = false })
-                    }
-                    else {
-                        if (firebaseViewModel.myPfp.value != ""){
-                            Box(modifier = Modifier
-                                .border(2.dp, Color.White, CircleShape)
-                                .size(40.dp)){
-                                Image(
-                                    painter = rememberImagePainter(data = pfp.value),
-                                    contentDescription = "pfp",
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search Icon"
+                        )
+                    },
+                    trailingIcon = {
+                        if (active) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close Icon",
+                                modifier = Modifier.clickable {
+                                    query = ""
+                                    active = false
+                                })
+                        } else {
+                            if (firebaseViewModel.myPfp.value != "") {
+                                Box(
                                     modifier = Modifier
-                                        .clickable {
-                                            firebaseViewModel.stopObserver()
-                                            navController?.navigate(Screens.PROFILE.route)
-                                        }
-                                        .clip(CircleShape)
-                                        .fillMaxSize(),
-                                    contentScale = ContentScale.Crop)
+                                        .border(2.dp, Color.White, CircleShape)
+                                        .size(40.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberImagePainter(data = pfp.value),
+                                        contentDescription = "pfp",
+                                        modifier = Modifier
+                                            .clickable {
+                                                firebaseViewModel.stopObserver()
+                                                navController?.navigate(Screens.PROFILE.route)
+                                            }
+                                            .clip(CircleShape)
+                                            .fillMaxSize(),
+                                        contentScale = ContentScale.Crop)
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Account Icon",
+                                    modifier = Modifier.clickable {
+                                        firebaseViewModel.stopObserver()
+                                        navController?.navigate(Screens.PROFILE.route)
+                                    })
                             }
                         }
-                        else {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Account Icon",
-                                modifier = Modifier.clickable {
-                                    firebaseViewModel.stopObserver()
-                                    navController?.navigate(Screens.PROFILE.route)
-                                })
-                        }
-                    }
                     },
                     content = {
-                        LazyColumn(modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
                             items(searchHistory) {
                                 Row(modifier = Modifier
                                     .padding(all = 10.dp)
@@ -211,8 +242,11 @@ fun HomeScreen(
                                     }
                                     .fillMaxWidth()
                                     .height(30.dp)) {
-                                    Icon(imageVector = Icons.Default.History, contentDescription = "History Icon",
-                                        modifier = Modifier.padding(end = 8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.History,
+                                        contentDescription = "History Icon",
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
                                     Text(text = it, fontSize = 20.sp, modifier = Modifier
                                         .clickable {
                                             query = it
@@ -229,13 +263,17 @@ fun HomeScreen(
                         .padding(8.dp)
                 )
                 selectedLocal?.let {
-                    MapViewComposable(mapCenter = mapCenter, poisList = poisList.value, selecedLocal = it)
+                    MapViewComposable(
+                        mapCenter = mapCenter,
+                        poisList = poisList.value,
+                        selecedLocal = it
+                    )
                 }
                 Row(
                     modifier
                         .zIndex(1f)
                         .align(Alignment.BottomCenter),
-                ){
+                ) {
                     AddButton(
                         firabaseViewModel = firebaseViewModel,
                         categorias = categoriesList,
@@ -256,12 +294,18 @@ fun HomeScreen(
                     categoriaDialog = true
                 }
                 if (categoriaDialog) {
-                    ViewFilter(poisList = poisList, category = selectedCategory?.nome?:"", onDismiss = { categoriaDialog = false }, onSelect = {
-                        geoPoint = it.geoPoint?: GeoPoint(0.0, 0.0)
-                        mapCenter = geoPoint
-                        openPOIdialog = true
-                        selectedPOI = it
-                    }, categorias = categoriesList)
+                    ViewFilter(
+                        poisList = poisList,
+                        category = selectedCategory?.nome ?: "",
+                        onDismiss = { categoriaDialog = false },
+                        onSelect = {
+                            geoPoint = it.geoPoint ?: GeoPoint(0.0, 0.0)
+                            mapCenter = geoPoint
+                            openPOIdialog = true
+                            selectedPOI = it
+                        },
+                        categorias = categoriesList
+                    )
                 }
                 Ordenacao(
                     orderBy = orderBy,
@@ -269,11 +313,12 @@ fun HomeScreen(
                     sortedLocal = sortedLocal,
                     locationViewModel = locationViewModel
                 )
-                LazyRow(modifier = Modifier
-                    .fillMaxSize()
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxSize()
                 ) {
                     items(sortedLocal.value) {
-                        if (sortedLocal.value.isEmpty()){
+                        if (sortedLocal.value.isEmpty()) {
                             sortedLocal.value = locationsList.value
                         }
                         Card(
@@ -282,11 +327,14 @@ fun HomeScreen(
                                 .padding(8.dp),
                             elevation = CardDefaults.cardElevation(4.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(128,224,255),
-                                contentColor = Color(0,0,128)
+                                containerColor = colorResource(id = R.color.containerColor),
+                                contentColor = colorResource(id = R.color.medium_dark_blue)
                             ),
                             onClick = {
-                                geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
+                                geoPoint = GeoPoint(
+                                    it.geoPoint?.latitude ?: 0.0,
+                                    it.geoPoint?.longitude ?: 0.0
+                                )
                                 mapCenter = geoPoint
                                 openCardDialog = true
                                 selectedLocal = it
@@ -301,19 +349,33 @@ fun HomeScreen(
                                 verticalArrangement = Arrangement.Center,
                                 content = {
                                     item {
-                                        Row (
+                                        Row(
                                             modifier = Modifier.fillMaxWidth()
-                                        ){
-                                            Text(text = it.name?:"", fontSize = 20.sp)
-                                            Icon(imageVector = Icons.Default.LocationCity, contentDescription = "Location Icon")
+                                        ) {
+                                            Text(text = it.name ?: "", fontSize = 20.sp)
+                                            Icon(
+                                                imageVector = Icons.Default.LocationCity,
+                                                contentDescription = "Location Icon"
+                                            )
                                         }
-                                        Spacer(modifier = Modifier
-                                            .height(8.dp)
-                                            .background(Color(0, 0, 0, 0)))
-                                        Text(text = "${it.description}", fontSize = 14.sp, modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(100.dp), maxLines = 3)
-                                        Image(painter = it.toImage(), contentDescription = "Filter Image")                            }
+                                        Spacer(
+                                            modifier = Modifier
+                                                .height(8.dp)
+                                                .background(colorResource(id = R.color.transparent))
+                                        )
+                                        Text(
+                                            text = "${it.description}",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(100.dp),
+                                            maxLines = 3
+                                        )
+                                        Image(
+                                            painter = it.toImage(),
+                                            contentDescription = "Filter Image"
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -322,17 +384,18 @@ fun HomeScreen(
                 }
             }
         }
-    }
-    else{
-        Column(modifier = modifier
-            .fillMaxSize(),
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(470.dp)
-                .clipToBounds()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(470.dp)
+                    .clipToBounds()
             ) {
                 SearchBar(
                     query = query,
@@ -345,9 +408,15 @@ fun HomeScreen(
                         searchTrue = true
                         searchHistoryViewModel.addSearch(query)
                         searchHistory = searchHistoryViewModel.searchHistory
-                        searchedCategories = searchedCategories?.filter { it.nome?.contains(query, ignoreCase = true) == true }
-                        searchedLocations = searchedLocations?.filter { it.name?.contains(query, ignoreCase = true) == true }
-                        searchedPOIs = searchedPOIs?.filter { it.name?.contains(query, ignoreCase = true) == true }
+                        searchedCategories = searchedCategories?.filter {
+                            it.nome?.contains(query, ignoreCase = true) == true
+                        }
+                        searchedLocations = searchedLocations?.filter {
+                            it.name?.contains(query, ignoreCase = true) == true
+                        }
+                        searchedPOIs = searchedPOIs?.filter {
+                            it.name?.contains(query, ignoreCase = true) == true
+                        }
                         searchHistoryViewModel.searchedCategories.value = searchedCategories!!
                         searchHistoryViewModel.searchedLocals.value = searchedLocations!!
                         searchHistoryViewModel.searchedPOIs.value = searchedPOIs!!
@@ -356,48 +425,58 @@ fun HomeScreen(
                     active = active,
                     onActiveChange = { active = it },
                     placeholder = { Text(text = stringResource(id = R.string.procurar)) },
-                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon") },
-                    trailingIcon = { if (active) {
+                    leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close Icon",
-                            modifier = Modifier.clickable {
-                                query = ""
-                                active = false })
-                    }
-                    else {
-                        if (firebaseViewModel.myPfp.value != ""){
-                            Box(modifier = Modifier
-                                .border(2.dp, Color.White, CircleShape)
-                                .size(40.dp)){
-                                Image(
-                                    painter = rememberImagePainter(data = pfp.value),
-                                    contentDescription = "pfp",
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search Icon"
+                        )
+                    },
+                    trailingIcon = {
+                        if (active) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close Icon",
+                                modifier = Modifier.clickable {
+                                    query = ""
+                                    active = false
+                                })
+                        } else {
+                            if (firebaseViewModel.myPfp.value != "") {
+                                Box(
                                     modifier = Modifier
-                                        .clickable {
-                                            firebaseViewModel.stopObserver()
-                                            navController?.navigate(Screens.PROFILE.route)
-                                        }
-                                        .clip(CircleShape)
-                                        .fillMaxSize(),
-                                    contentScale = ContentScale.Crop)
+                                        .border(2.dp, Color.White, CircleShape)
+                                        .size(40.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberImagePainter(data = pfp.value),
+                                        contentDescription = "pfp",
+                                        modifier = Modifier
+                                            .clickable {
+                                                firebaseViewModel.stopObserver()
+                                                navController?.navigate(Screens.PROFILE.route)
+                                            }
+                                            .clip(CircleShape)
+                                            .fillMaxSize(),
+                                        contentScale = ContentScale.Crop)
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Account Icon",
+                                    modifier = Modifier.clickable {
+                                        firebaseViewModel.stopObserver()
+                                        navController?.navigate(Screens.PROFILE.route)
+                                    }
+                                )
                             }
                         }
-                        else {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Account Icon",
-                                modifier = Modifier.clickable {
-                                    firebaseViewModel.stopObserver()
-                                    navController?.navigate(Screens.PROFILE.route)
-                                })
-                        }
-                    }
                     },
                     content = {
-                        LazyColumn(modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
                             items(searchHistory) {
                                 Row(modifier = Modifier
                                     .padding(all = 10.dp)
@@ -408,15 +487,19 @@ fun HomeScreen(
                                     }
                                     .fillMaxWidth()
                                     .height(30.dp)) {
-                                    Icon(imageVector = Icons.Default.History, contentDescription = "History Icon",
-                                        modifier = Modifier.padding(end = 8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.History,
+                                        contentDescription = "History Icon",
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
                                     Text(text = it, fontSize = 20.sp, modifier = Modifier
                                         .clickable {
                                             query = it
                                             active = false
                                         }
                                         .align(Alignment.CenterVertically)
-                                        .fillMaxWidth())
+                                        .fillMaxWidth()
+                                    )
                                 }
                             }
                         }
@@ -425,19 +508,24 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(8.dp)
                 )
-                selectedLocal?.let { MapViewComposable(mapCenter = mapCenter, poisList = poisList.value, selecedLocal = it) }
+                selectedLocal?.let {
+                    MapViewComposable(
+                        mapCenter = mapCenter,
+                        poisList = poisList.value,
+                        selecedLocal = it
+                    )
+                }
                 Row(
                     modifier
                         .zIndex(1f)
                         .align(Alignment.BottomCenter),
-                ){
+                ) {
                     AddButton(
                         firabaseViewModel = firebaseViewModel,
                         categorias = categoriesList,
                         locations = locationsList,
                         locationViewModel = locationViewModel
                     )
-
                 }
                 MyLocButton(
                     locationViewModel = locationViewModel
@@ -450,12 +538,18 @@ fun HomeScreen(
                 categoriaDialog = true
             }
             if (categoriaDialog) {
-                ViewFilter(poisList = poisList, category = selectedCategory?.nome?:"", onDismiss = { categoriaDialog = false }, onSelect = {
-                    geoPoint = it.geoPoint?: GeoPoint(0.0, 0.0)
-                    mapCenter = geoPoint
-                    openPOIdialog = true
-                    selectedPOI = it
-                }, categorias = categoriesList)
+                ViewFilter(
+                    poisList = poisList,
+                    category = selectedCategory?.nome ?: "",
+                    onDismiss = { categoriaDialog = false },
+                    onSelect = {
+                        geoPoint = it.geoPoint ?: GeoPoint(0.0, 0.0)
+                        mapCenter = geoPoint
+                        openPOIdialog = true
+                        selectedPOI = it
+                    },
+                    categorias = categoriesList
+                )
             }
             Ordenacao(
                 orderBy = orderBy,
@@ -463,11 +557,12 @@ fun HomeScreen(
                 sortedLocal = sortedLocal,
                 locationViewModel = locationViewModel
             )
-            LazyRow(modifier = Modifier
-                .fillMaxSize()
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxSize()
             ) {
                 items(sortedLocal.value) {
-                    if (sortedLocal.value.isEmpty()){
+                    if (sortedLocal.value.isEmpty()) {
                         sortedLocal.value = locationsList.value
                     }
                     Card(
@@ -476,11 +571,14 @@ fun HomeScreen(
                             .padding(8.dp),
                         elevation = CardDefaults.cardElevation(4.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(128,224,255),
-                            contentColor = Color(0,0,128)
+                            containerColor = colorResource(id = R.color.containerColor),
+                            contentColor = colorResource(id = R.color.medium_dark_blue)
                         ),
                         onClick = {
-                            geoPoint = GeoPoint(it.geoPoint?.latitude?:0.0, it.geoPoint?.longitude?:0.0)
+                            geoPoint = GeoPoint(
+                                it.geoPoint?.latitude ?: 0.0,
+                                it.geoPoint?.longitude ?: 0.0
+                            )
                             mapCenter = geoPoint
                             openCardDialog = true
                             selectedLocal = it
@@ -495,23 +593,35 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.Center,
                             content = {
                                 item {
-                                    Row (
+                                    Row(
                                         modifier = Modifier.fillMaxWidth()
-                                    ){
-                                        Text(text = it.name?:"", fontSize = 20.sp)
-                                        Icon(imageVector = Icons.Default.LocationCity, contentDescription = "Location Icon")
+                                    ) {
+                                        Text(text = it.name ?: "", fontSize = 20.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.LocationCity,
+                                            contentDescription = "Location Icon"
+                                        )
                                     }
-                                    Spacer(modifier = Modifier
-                                        .height(8.dp)
-                                        .background(Color(0, 0, 0, 0)))
-                                    Text(text = "${it.description}", fontSize = 14.sp, modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(100.dp), maxLines = 3)
-                                    Image(painter = it.toImage(), contentDescription = "Filter Image")                            }
+                                    Spacer(
+                                        modifier = Modifier
+                                            .height(8.dp)
+                                            .background(colorResource(id = R.color.transparent))
+                                    )
+                                    Text(
+                                        text = "${it.description}",
+                                        fontSize = 14.sp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(100.dp), maxLines = 3
+                                    )
+                                    Image(
+                                        painter = it.toImage(),
+                                        contentDescription = "Filter Image"
+                                    )
+                                }
                             }
                         )
                     }
-
                 }
             }
         }
@@ -519,21 +629,43 @@ fun HomeScreen(
 
     if (openCardDialog) {
         selectedLocal?.let { it ->
-            ViewLocation(location = it, onDismiss = { openCardDialog = false }, poisList = poisList.value, onSelect = {
-                geoPoint = it.geoPoint?: GeoPoint(0.0, 0.0)
-                mapCenter = geoPoint
-                openPOIdialog = true
-                selectedPOI = it
-            })
+            ViewLocation(
+                location = it,
+                onDismiss = { openCardDialog = false },
+                poisList = poisList.value,
+                onSelect = {
+                    geoPoint = it.geoPoint ?: GeoPoint(0.0, 0.0)
+                    mapCenter = geoPoint
+                    openPOIdialog = true
+                    selectedPOI = it
+                }
+            )
         }
     }
     if (openPOIdialog) {
         selectedPOI?.let { it ->
-            ViewPOI(poi = it, onDismiss = { openPOIdialog = false }, firebaseViewModel = firebaseViewModel, onSelect = {
-                avaliacao = Avaliacao(it["comment"].toString(), it["rating"] as Int, it["user"].toString(), it["poi"].toString())
-                firebaseViewModel.addAvaliacao(avaliacao?:Avaliacao("Error", 0, "Error", "Error"))
-                openPOIdialog = false
-            })
+            ViewPOI(
+                poi = it,
+                onDismiss = { openPOIdialog = false },
+                firebaseViewModel = firebaseViewModel,
+                onSelect = {
+                    avaliacao = Avaliacao(
+                        it["comment"].toString(),
+                        it["rating"] as Int,
+                        it["user"].toString(),
+                        it["poi"].toString()
+                    )
+                    firebaseViewModel.addAvaliacao(
+                        avaliacao ?: Avaliacao(
+                            "Error",
+                            0,
+                            "Error",
+                            "Error"
+                        )
+                    )
+                    openPOIdialog = false
+                }
+            )
         }
     }
 }

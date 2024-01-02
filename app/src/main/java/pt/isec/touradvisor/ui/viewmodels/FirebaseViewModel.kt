@@ -20,21 +20,19 @@ import kotlin.coroutines.suspendCoroutine
 
 class FirebaseViewModel : ViewModel() {
 
-    var logged = mutableStateOf(false)
-
     private val _sortedLocal = mutableStateOf(listOf<Local>())
     val sortedLocal: MutableState<List<Local>>
         get() = _sortedLocal
 
     private val _rawUser = mutableStateOf(FAuthUtil.currentUser)
-    val rawUser : MutableState<FirebaseUser?>
+    val rawUser: MutableState<FirebaseUser?>
         get() = _rawUser
 
     private val _user = mutableStateOf(FAuthUtil.currentUser?.toUser())
-    val user : MutableState<User?>
+    val user: MutableState<User?>
         get() = _user
 
-    fun getNickname() : String? {
+    fun getNickname(): String? {
         return rawUser.value?.displayName
     }
 
@@ -43,19 +41,19 @@ class FirebaseViewModel : ViewModel() {
         get() = _error
 
     private val _userUID = mutableStateOf(FAuthUtil.currentUser?.uid)
-    val userUID : MutableState<String?>
+    val userUID: MutableState<String?>
         get() = _userUID
 
     private val _myPOIs = mutableStateOf(listOf<POI>())
-    val myPOIs : MutableState<List<POI>>
+    val myPOIs: MutableState<List<POI>>
         get() = _myPOIs
 
     private val _sortedPOIs = mutableStateOf(listOf<POI>())
-    val sortedPOIs : MutableState<List<POI>>
+    val sortedPOIs: MutableState<List<POI>>
         get() = _sortedPOIs
 
     private val _myRatings = mutableStateOf(listOf<Avaliacao>())
-    val myRatings : MutableState<List<Avaliacao>>
+    val myRatings: MutableState<List<Avaliacao>>
         get() = _myRatings
 
     fun createUserWithEmail(email: String, password: String) {
@@ -90,35 +88,22 @@ class FirebaseViewModel : ViewModel() {
     }
 
     private val _categories = mutableStateOf(listOf<Category>())
-    val categories : MutableState<List<Category>>
+    val categories: MutableState<List<Category>>
         get() = _categories
 
     private val _pois = mutableStateOf(listOf<POI>())
-    val pois : MutableState<List<POI>>
+    val pois: MutableState<List<POI>>
         get() = _pois
 
     private val _locations = mutableStateOf(listOf<Local>())
-    val locations : MutableState<List<Local>>
+    val locations: MutableState<List<Local>>
         get() = _locations
 
     private val _myPfp = mutableStateOf("")
-    val myPfp : MutableState<String>
+    val myPfp: MutableState<String>
         get() = _myPfp
 
-    private val _searchedPOIs = mutableStateOf(listOf<POI>())
-    private val _searchedLocations = mutableStateOf(listOf<Local>())
-    private val _searchedCategories = mutableStateOf(listOf<Category>())
-
-    val searchedPOIs : MutableState<List<POI>>
-        get() = _searchedPOIs
-
-    val searchedLocations : MutableState<List<Local>>
-        get() = _searchedLocations
-
-    val searchedCategories : MutableState<List<Category>>
-        get() = _searchedCategories
-
-    fun addPOIToFirestore(data: HashMap<String,Any>) {
+    fun addPOIToFirestore(data: HashMap<String, Any>) {
         viewModelScope.launch {
             FStorageUtil.addPOIToFirestore(data) { exception ->
                 _error.value = exception?.message
@@ -126,7 +111,7 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
-    fun addCategoryToFirestore(data: HashMap<String,Any>) {
+    fun addCategoryToFirestore(data: HashMap<String, Any>) {
         viewModelScope.launch {
             FStorageUtil.addCategoryToFirestore(data) { exception ->
                 _error.value = exception?.message
@@ -134,7 +119,7 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
-    fun addLocationToFirestore(data: HashMap<String,Any>) {
+    fun addLocationToFirestore(data: HashMap<String, Any>) {
         viewModelScope.launch {
             FStorageUtil.addLocationToFirestore(data) { exception ->
                 _error.value = exception?.message
@@ -144,23 +129,21 @@ class FirebaseViewModel : ViewModel() {
 
     fun addPFPToFirestore(user: String, newPFP: String) {
         viewModelScope.launch {
-            FStorageUtil.addPFPToFirestore(user,newPFP) { exception ->
-                _error.value = exception?.message
-            }
+            FStorageUtil.addPFPToFirestore(user, newPFP)
         }
     }
 
-    suspend fun startObserver() : Boolean {
+    suspend fun startObserver(): Boolean {
         Log.i("OBSERVER", "start")
         return suspendCoroutine { continuation ->
             Log.i("OBSERVER", "start2")
             FStorageUtil.startObserver(onNewValues = { c, p, l ->
                 Log.i("OBSERVER", "start3")
                 try {
-                    if (userUID.value == null){
+                    if (userUID.value == null) {
                         Log.i("OBSERVER", "null")
                         continuation.resume(true)
-                    } else{
+                    } else {
                         Log.i("OBSERVER", "not null")
                         _categories.value = c
                         _pois.value = p
@@ -181,9 +164,9 @@ class FirebaseViewModel : ViewModel() {
     suspend fun getUserPOIs(): List<POI> {
         return suspendCoroutine { continuation ->
             userUID.value?.let {
-                FStorageUtil.getUserPOIS(it) { pois->
+                FStorageUtil.getUserPOIS(it) { pois ->
                     try {
-                        if (userUID.value == null){
+                        if (userUID.value == null) {
                             Log.i("POIS", "null")
                             continuation.resume(listOf())
                             return@getUserPOIS
@@ -192,7 +175,7 @@ class FirebaseViewModel : ViewModel() {
                         sortedPOIs.value = pois
                         continuation.resume(pois)
                     } catch (e: Exception) {
-                       e.printStackTrace()
+                        e.printStackTrace()
                     }
                 }
             }
@@ -203,7 +186,7 @@ class FirebaseViewModel : ViewModel() {
         return suspendCoroutine {
             FStorageUtil.getUserPfp(user) { pfp ->
                 try {
-                    if (userUID.value == null){
+                    if (userUID.value == null) {
                         Log.i("PFP", "null")
                         it.resume(Unit)
                         return@getUserPfp

@@ -45,19 +45,20 @@ fun SearchScreen(
     var selectedCategory: Category? by remember { mutableStateOf(null) }
     val categoriesList by remember { mutableStateOf(firebaseViewModel.categories) }
     val poisList by remember { mutableStateOf(firebaseViewModel.pois) }
-    var localList by remember { mutableStateOf(firebaseViewModel.locations) }
     var showPois by remember { mutableStateOf(true) }
     var showLocals by remember { mutableStateOf(false) }
-    var showCategories  by remember { mutableStateOf(false) }
+    var showCategories by remember { mutableStateOf(false) }
 
     var avaliacao: Avaliacao? by remember { mutableStateOf(null) }
 
 
     Column {
         Spacer(modifier = Modifier.height(70.dp))
-        Row (modifier = Modifier
-            .fillMaxWidth()
-            .align(alignment = androidx.compose.ui.Alignment.CenterHorizontally)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(alignment = androidx.compose.ui.Alignment.CenterHorizontally)
+        ) {
             Button(onClick = {
                 showPois = true
                 showCategories = false
@@ -80,11 +81,13 @@ fun SearchScreen(
                 Text(text = stringResource(R.string.categories))
             }
         }
-        if (searchedPOIs.value.isNotEmpty() && showPois){
-            Text(text = stringResource(id = R.string.pois), fontSize = 30.sp, modifier = Modifier
-                .padding(10.dp)
-                .fillMaxWidth())
-            LazyColumn(content =  {
+        if (searchedPOIs.value.isNotEmpty() && showPois) {
+            Text(
+                text = stringResource(id = R.string.pois), fontSize = 30.sp, modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxWidth()
+            )
+            LazyColumn(content = {
                 items(searchedPOIs.value.size, itemContent = {
                     Card {
                         POICard(
@@ -99,7 +102,7 @@ fun SearchScreen(
             })
         }
 
-        if (searchedLocals.value.isNotEmpty() && showLocals){
+        if (searchedLocals.value.isNotEmpty() && showLocals) {
             Text(text = stringResource(id = R.string.locals))
             LazyColumn(content = {
                 items(searchedLocals.value.size, itemContent = {
@@ -113,12 +116,12 @@ fun SearchScreen(
                 })
             })
         }
-        if (searchedCategories.value.isNotEmpty() && showCategories){
+        if (searchedCategories.value.isNotEmpty() && showCategories) {
             Text(text = stringResource(id = R.string.categories))
             LazyColumn(content = {
                 items(searchedCategories.value.size, itemContent = {
                     Card {
-                        CategoryCard(category = searchedCategories.value[it]){
+                        CategoryCard(category = searchedCategories.value[it]) {
                             selectedCategory = searchedCategories.value[it]
                             openCategoryCard = true
                         }
@@ -130,26 +133,53 @@ fun SearchScreen(
     }
     if (openPoiCard) {
         selectedPOI?.let { it ->
-            ViewPOI(poi = it, onDismiss = { openPoiCard = false }, firebaseViewModel = firebaseViewModel, onSelect = {
-                avaliacao = Avaliacao(it["comment"].toString(), it["rating"] as Int, it["user"].toString(), it["poi"].toString())
-                firebaseViewModel.addAvaliacao(avaliacao?: Avaliacao("Error", 0, "Error", "Error"))
-                openPoiCard = false
-            })        }
+            ViewPOI(
+                poi = it,
+                onDismiss = { openPoiCard = false },
+                firebaseViewModel = firebaseViewModel,
+                onSelect = {
+                    avaliacao = Avaliacao(
+                        it["comment"].toString(),
+                        it["rating"] as Int,
+                        it["user"].toString(),
+                        it["poi"].toString()
+                    )
+                    firebaseViewModel.addAvaliacao(
+                        avaliacao ?: Avaliacao(
+                            "Error",
+                            0,
+                            "Error",
+                            "Error"
+                        )
+                    )
+                    openPoiCard = false
+                })
+        }
     }
     if (openLocalCard) {
         selectedLocal?.let { it ->
-            ViewLocation(location = it, onDismiss = { openLocalCard = false }, poisList = poisList.value, onSelect = {
-                openLocalCard = false
-                selectedPOI = it
-            })
+            ViewLocation(
+                location = it,
+                onDismiss = { openLocalCard = false },
+                poisList = poisList.value,
+                onSelect = {
+                    openLocalCard = false
+                    selectedPOI = it
+                })
         }
     }
     if (openCategoryCard) {
         selectedCategory?.let {
-            ViewFilter(poisList = poisList, category = selectedCategory?.nome?:"", onDismiss = { openCategoryCard = false }, onSelect = {
-                openCategoryCard = false
-                selectedPOI = it
-            }, categorias = categoriesList)
+            ViewFilter(
+                poisList = poisList,
+                category = selectedCategory?.nome ?: "",
+                onDismiss = { openCategoryCard = false },
+                onSelect = {
+                    openCategoryCard = false
+                    selectedPOI = it
+                },
+                categorias = categoriesList
+            )
         }
     }
 }

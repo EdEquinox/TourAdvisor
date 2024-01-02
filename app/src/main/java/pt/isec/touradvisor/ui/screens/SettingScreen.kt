@@ -64,66 +64,75 @@ fun SettingScreen(
         item {
             Setting(text = stringResource(R.string.change_password),
                 imageVector = Icons.Default.Key,
-                contentDescription = "Change Password" ,
+                contentDescription = "Change Password",
                 onClick = {
                     showDialogPassword.value = true
                 })
         }
         item {
-            Setting(text = stringResource(R.string.change_email),
+            Setting(
+                text = stringResource(R.string.change_email),
                 imageVector = Icons.Default.Mail,
-                contentDescription = "Change Email" ) {
-                    showDialogEmail.value = true
-                }
+                contentDescription = "Change Email"
+            ) {
+                showDialogEmail.value = true
+            }
         }
         item {
-            Setting(text = stringResource(R.string.change_nickname),
+            Setting(
+                text = stringResource(R.string.change_nickname),
                 imageVector = Icons.Default.DriveFileRenameOutline,
-                contentDescription = "Change Nick" ) {
-                    showDialogNick.value = true
-                }
+                contentDescription = "Change Nick"
+            ) {
+                showDialogNick.value = true
+            }
         }
         item {
-            Setting(text = stringResource(R.string.delete_account),
+            Setting(
+                text = stringResource(R.string.delete_account),
                 imageVector = Icons.Default.Delete,
-                contentDescription = "Delete Account" ) {
-                    showDialogDelete.value = true
-                }
+                contentDescription = "Delete Account"
+            ) {
+                showDialogDelete.value = true
+            }
         }
         item {
-            Setting(text = stringResource(R.string.info),
+            Setting(
+                text = stringResource(R.string.info),
                 imageVector = Icons.Default.Info,
-                contentDescription = "Info" ) {
-                    showDialogInfo.value = true
-                }
+                contentDescription = "Info"
+            ) {
+                showDialogInfo.value = true
+            }
         }
     })
 
-    if (showDialogPassword.value){
+    if (showDialogPassword.value) {
         ChangePassword(firebaseViewModel = firebaseViewModel) { showDialogPassword.value = false }
     }
-    if (showDialogEmail.value){
+    if (showDialogEmail.value) {
         ChangeEmail(firebaseViewModel = firebaseViewModel) { showDialogEmail.value = false }
     }
-    if (showDialogNick.value){
+    if (showDialogNick.value) {
         ChangeNick(firebaseViewModel = firebaseViewModel) { showDialogNick.value = false }
     }
-    if (showDialogDelete.value){
+    if (showDialogDelete.value) {
         DeleteAccount(firebaseViewModel = firebaseViewModel) { showDialogDelete.value = false }
     }
-    if (showDialogInfo.value){
+    if (showDialogInfo.value) {
         InfoApp { showDialogInfo.value = false }
     }
-    if (showDialogPFP.value){
+    if (showDialogPFP.value) {
         ChangePFP(firebaseViewModel = firebaseViewModel) { showDialogPFP.value = false }
     }
 
 }
+
 @Composable
 fun Setting(
     text: String,
     imageVector: ImageVector,
-    contentDescription : String,
+    contentDescription: String,
     onClick: () -> Unit = { },
 ) {
     Box(
@@ -131,18 +140,22 @@ fun Setting(
             .fillMaxWidth()
             .height(70.dp)
             .padding(8.dp)
-            .clickable { onClick() }){
-        Row(modifier = Modifier
-            .fillMaxSize()
-            .align(Alignment.Center)
+            .clickable { onClick() }) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.Center)
         ) {
-            Icon(imageVector = imageVector , contentDescription = contentDescription, modifier = Modifier.align(Alignment.CenterVertically))
+            Icon(
+                imageVector = imageVector,
+                contentDescription = contentDescription,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = text, modifier = Modifier.align(Alignment.CenterVertically))
         }
     }
 }
-
 
 
 @Composable
@@ -175,7 +188,7 @@ fun ChangePassword(
                 )
             }
 
-               },
+        },
         confirmButton = {
             Button(onClick = {
                 firebaseViewModel.changePassword(oldPassword, newPassword, newPassword2)
@@ -190,7 +203,7 @@ fun ChangePassword(
         }
     )
 
-    }
+}
 
 @Composable
 fun ChangeEmail(
@@ -252,6 +265,7 @@ fun ChangeNick(
         confirmButton = {
             Button(onClick = {
                 firebaseViewModel.changeNick(newNick)
+                onDismissRequest()
             }) {
                 Text(text = stringResource(R.string.confirm))
             }
@@ -340,7 +354,7 @@ fun ChangePFP(
                 UploadPhotoButton(onUriReady = {
                     newPFP = it
                     user?.let { firebaseViewModel.addPFPToFirestore(user, newPFP) }
-                }, type = "Profile" , picName = user.toString() )
+                }, type = "Profile", picName = user.toString())
             }
 
         },

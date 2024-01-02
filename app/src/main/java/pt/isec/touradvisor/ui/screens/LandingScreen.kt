@@ -16,19 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import pt.isec.touradviser.R
 import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
-import pt.isec.touradvisor.ui.viewmodels.LocationViewModel
 
 @Composable
 fun LandingScreen(
     navController: NavHostController,
-    firebaseViewModel: FirebaseViewModel,
-    locationViewModel: LocationViewModel
+    firebaseViewModel: FirebaseViewModel
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "animation")
     val scale by infiniteTransition.animateFloat(
@@ -41,9 +39,10 @@ fun LandingScreen(
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF97CCEB)),
+        modifier = Modifier.run {
+            fillMaxSize()
+                .background(colorResource(id = R.color.light_sky_blue))
+        },
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -57,11 +56,11 @@ fun LandingScreen(
         if (firebaseViewModel.userUID.value == null) {
             delay(2000)
             navController.navigate(Screens.LOGIN.route)
-        } else{
+        } else {
             firebaseViewModel.startObserver()
             firebaseViewModel.getUserPOIs()
-            firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value?:"")
-            firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value?:"")
+            firebaseViewModel.getUserPFP(firebaseViewModel.userUID.value ?: "")
+            firebaseViewModel.getUserRatings(firebaseViewModel.userUID.value ?: "")
             navController.navigate(Screens.HOME.route)
         }
     }

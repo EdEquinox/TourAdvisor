@@ -41,4 +41,5 @@
     <string name="descri_o">Description</string>
     <string name="categoria">Category:</string>
     <string name="remover">Remove</string>
+    <string name="user" translatable="false">User</string>
 </resources>

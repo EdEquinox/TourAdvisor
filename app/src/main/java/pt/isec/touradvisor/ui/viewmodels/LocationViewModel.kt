@@ -31,7 +31,7 @@ class LocationViewModel(
 
 
     private val _currentLocation = MutableLiveData(Location(null))
-    val currentLocation : LiveData<Location>
+    val currentLocation: LiveData<Location>
         get() = _currentLocation
 
     init {

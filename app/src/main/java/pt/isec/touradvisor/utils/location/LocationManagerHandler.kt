@@ -37,6 +37,7 @@ class LocationManagerHandler(private val locationManager: LocationManager) : Loc
         val notify = onLocation ?: return@LocationListenerCompat
         notify(location)
     }
+
     override fun stopLocationUpdates() {
         if (!locationEnabled)
             return

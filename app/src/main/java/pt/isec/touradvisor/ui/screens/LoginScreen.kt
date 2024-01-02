@@ -38,14 +38,14 @@ fun LoginScreen(
     viewModel: FirebaseViewModel,
     modifier: Modifier = Modifier,
     onLogin: () -> Unit = {}
-    ) {
+) {
     val context = LocalContext.current
-    val email = remember { mutableStateOf("")}
-    val password = remember { mutableStateOf("")}
+    val email = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
     val error = viewModel.error.value
     val user by remember { viewModel.user }
     val configuration = LocalConfiguration.current
-    val portrait = remember{ mutableIntStateOf(configuration.orientation) }
+    val portrait = remember { mutableIntStateOf(configuration.orientation) }
     val fields = stringResource(R.string.please_fill_all_fields)
 
 
@@ -55,13 +55,18 @@ fun LoginScreen(
         }
     }
 
-    if (portrait.value == Configuration.ORIENTATION_LANDSCAPE){
+    if (portrait.intValue == Configuration.ORIENTATION_LANDSCAPE) {
         Row {
             Column(
                 Modifier
                     .fillMaxHeight()
-                    .padding(16.dp)) {
-                Text(text = stringResource(id = R.string.welcome_to_tour_advisor), fontSize = 30.sp, modifier = Modifier.align(alignment = CenterHorizontally))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.welcome_to_tour_advisor),
+                    fontSize = 30.sp,
+                    modifier = Modifier.align(alignment = CenterHorizontally)
+                )
                 Spacer(modifier = Modifier.height(80.dp))
                 Image(
                     painter = painterResource(id = R.drawable.tour_advisor_logo),
@@ -95,11 +100,12 @@ fun LoginScreen(
                 Row(modifier = Modifier.align(alignment = CenterHorizontally)) {
                     Button(
                         onClick = {
-                            if (email.value.isBlank() || password.value.isBlank()){
+                            if (email.value.isBlank() || password.value.isBlank()) {
                                 Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
-                            viewModel.signInWithEmail(email.value, password.value)},
+                            viewModel.signInWithEmail(email.value, password.value)
+                        },
                         modifier = Modifier.width(120.dp)
                     ) {
                         Text(text = stringResource(id = R.string.login))
@@ -107,7 +113,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.width(60.dp))
                     Button(
                         onClick = {
-                            if (email.value.isBlank() || password.value.isBlank()){
+                            if (email.value.isBlank() || password.value.isBlank()) {
                                 Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
@@ -120,16 +126,20 @@ fun LoginScreen(
                 }
             }
         }
-    } else{
-        Column(modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)) {
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text(text = stringResource(R.string.welcome_to_tour_advisor),
+            Text(
+                text = stringResource(R.string.welcome_to_tour_advisor),
                 fontSize = 30.sp,
                 modifier = Modifier
-                    .align(alignment = CenterHorizontally))
+                    .align(alignment = CenterHorizontally)
+            )
             Spacer(modifier = Modifier.height(80.dp))
             OutlinedTextField(
                 value = email.value,
@@ -153,11 +163,12 @@ fun LoginScreen(
             Row(modifier = Modifier.align(alignment = CenterHorizontally)) {
                 Button(
                     onClick = {
-                        if (email.value.isBlank() || password.value.isBlank()){
+                        if (email.value.isBlank() || password.value.isBlank()) {
                             Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-                        viewModel.signInWithEmail(email.value, password.value)},
+                        viewModel.signInWithEmail(email.value, password.value)
+                    },
                     modifier = Modifier.width(120.dp)
                 ) {
                     Text(text = stringResource(R.string.login))
@@ -165,7 +176,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.width(60.dp))
                 Button(
                     onClick = {
-                        if (email.value.isBlank() || password.value.isBlank()){
+                        if (email.value.isBlank() || password.value.isBlank()) {
                             Toast.makeText(context, fields, Toast.LENGTH_SHORT).show()
                             return@Button
                         }

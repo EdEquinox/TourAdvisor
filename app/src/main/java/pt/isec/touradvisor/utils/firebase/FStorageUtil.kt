@@ -1,9 +1,6 @@
 package pt.isec.touradvisor.utils.firebase
 
-import android.content.res.AssetManager
 import android.util.Log
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -11,16 +8,12 @@ import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import pt.isec.touradvisor.data.Avaliacao
 import pt.isec.touradvisor.data.Category
 import pt.isec.touradvisor.data.Local
 import pt.isec.touradvisor.data.POI
-import java.io.IOException
 import java.io.InputStream
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 class FStorageUtil {
     companion object {
@@ -30,7 +23,10 @@ class FStorageUtil {
         private var listenerRegistrationLocations: ListenerRegistration? = null
 
         @OptIn(DelicateCoroutinesApi::class)
-        fun startObserver(onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Local>) -> Unit, onReady: () -> Unit) {
+        fun startObserver(
+            onNewValues: (MutableList<Category>, MutableList<POI>, MutableList<Local>) -> Unit,
+            onReady: () -> Unit
+        ) {
             stopObserver()
 
             val categories = mutableListOf<Category>()
@@ -46,14 +42,6 @@ class FStorageUtil {
                 if (completedListeners == 3) {
                     onNewValues(categories, pois, locations)
                     onReady()
-                }
-            }
-
-            suspend fun DocumentReference.getSuspended(): DocumentSnapshot? = suspendCancellableCoroutine { continuation ->
-                this.get().addOnSuccessListener { document ->
-                    continuation.resume(document)
-                }.addOnFailureListener { e ->
-                    continuation.resumeWithException(e)
                 }
             }
 
@@ -80,7 +68,7 @@ class FStorageUtil {
                         return@addSnapshotListener
                     } else {
                         if (querySnapshot != null && !querySnapshot.isEmpty) {
-                            GlobalScope.launch{
+                            GlobalScope.launch {
                                 querySnapshot.documents.forEach {
                                     val docRefCat = it.getDocumentReference("categoria")
                                     val docRefLoc = it.getDocumentReference("location")
@@ -97,7 +85,16 @@ class FStorageUtil {
                                     val geoPoint = it.getGeoPoint("geoPoint")
                                     val image = it.getString("imagem") ?: ""
 
-                                    pois.add(POI(name, description, geoPoint, category,  location, image))
+                                    pois.add(
+                                        POI(
+                                            name,
+                                            description,
+                                            geoPoint,
+                                            category,
+                                            location,
+                                            image
+                                        )
+                                    )
                                 }
                                 Log.i("OBSERVER", "POIS")
                                 checkAllListenersCompleted()
@@ -154,8 +151,18 @@ class FStorageUtil {
                                     val geoPoint = it.getGeoPoint("geoPoint")
                                     val image = it.getString("imagem") ?: ""
                                     val nuser = it.getString("user") ?: ""
-                                    if (nuser == user){
-                                        pois.add(POI(name, description, geoPoint, category, location, image, nuser))
+                                    if (nuser == user) {
+                                        pois.add(
+                                            POI(
+                                                name,
+                                                description,
+                                                geoPoint,
+                                                category,
+                                                location,
+                                                image,
+                                                nuser
+                                            )
+                                        )
                                     }
                                 }
                                 onNewValues(pois)
@@ -171,7 +178,12 @@ class FStorageUtil {
             listenerRegistrationLocations?.remove()
         }
 
-        fun uploadFile(inputStream: InputStream,path:String, imgFile: String, onUploadComplete: (String) -> Unit) {
+        fun uploadFile(
+            inputStream: InputStream,
+            path: String,
+            imgFile: String,
+            onUploadComplete: (String) -> Unit
+        ) {
             val storage = Firebase.storage
             val ref1 = storage.reference
             val ref2 = ref1.child(path)
@@ -234,13 +246,14 @@ class FStorageUtil {
 
         fun addAvaliacao(avaliacao: Avaliacao, onResult: (Throwable?) -> Unit) {
             val db = Firebase.firestore
-            db.collection("Avaliacoes").document("${avaliacao.poi}.${avaliacao.user}").set(avaliacao)
-                .addOnCompleteListener{result ->
+            db.collection("Avaliacoes").document("${avaliacao.poi}.${avaliacao.user}")
+                .set(avaliacao)
+                .addOnCompleteListener { result ->
                     onResult(result.exception)
                 }
         }
 
-        fun addPFPToFirestore(user: String, newPFP: String, onResult: (Throwable?) -> Unit) {
+        fun addPFPToFirestore(user: String, newPFP: String) {
             val db = Firebase.firestore
             db.collection("Users").document(user).set(hashMapOf("pfp" to newPFP))
                 .addOnCompleteListener { result ->
@@ -248,6 +261,7 @@ class FStorageUtil {
                 }
         }
 
+        @OptIn(DelicateCoroutinesApi::class)
         fun getUserRatings(user: String, onNewValues: (MutableList<Avaliacao>) -> Unit) {
             val db = Firebase.firestore
             val ratings = mutableListOf<Avaliacao>()
@@ -264,8 +278,15 @@ class FStorageUtil {
                                     val userRat = it.getString("user") ?: ""
                                     val rating = it.getDouble("rating") ?: 0.0
                                     val comment = it.getString("comment") ?: ""
-                                    if (userRat == user){
-                                        ratings.add(Avaliacao(comment, rating.toInt(), userRat, poi))
+                                    if (userRat == user) {
+                                        ratings.add(
+                                            Avaliacao(
+                                                comment,
+                                                rating.toInt(),
+                                                userRat,
+                                                poi
+                                            )
+                                        )
                                     }
                                 }
                                 onNewValues(ratings)

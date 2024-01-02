@@ -88,33 +88,47 @@ fun MainScreen(
                     }
                 )
         }
-    ){
+    ) {
         NavHost(
             navController = navController,
             startDestination = Screens.LANDING.route,
             modifier = Modifier.fillMaxSize()
         ) {
             composable(Screens.LANDING.route) {
-                LandingScreen(navController = navController, firebaseViewModel = firebaseViewModel, locationViewModel = locationViewModel)
+                LandingScreen(
+                    navController = navController,
+                    firebaseViewModel = firebaseViewModel
+                )
             }
             composable(Screens.HOME.route) {
-                HomeScreen(navController = navController ,
+                HomeScreen(
+                    navController = navController,
                     locationViewModel = locationViewModel,
                     firebaseViewModel = firebaseViewModel,
-                    searchHistoryViewModel = searchHistoryViewModel) {
+                    searchHistoryViewModel = searchHistoryViewModel
+                ) {
                     navController.navigate(
                         Screens.LOGIN.route
                     )
                 }
             }
             composable(Screens.PROFILE.route) {
-                ProfileScreen( navController = navController, firebaseViewModel = firebaseViewModel)
+                ProfileScreen(
+                    firebaseViewModel = firebaseViewModel
+                )
             }
             composable(Screens.LOGIN.route) {
-                LoginScreen(viewModel = firebaseViewModel, onLogin = { navController.navigate(Screens.LANDING.route) })
+                LoginScreen(
+                    viewModel = firebaseViewModel,
+                    onLogin = {
+                        navController.navigate(Screens.LANDING.route)
+                    }
+                )
             }
             composable(Screens.SETTINGS.route) {
-                SettingScreen(firebaseViewModel = firebaseViewModel)
+                SettingScreen(
+                    firebaseViewModel = firebaseViewModel
+                )
             }
             composable(Screens.SEARCH.route) {
                 SearchScreen(

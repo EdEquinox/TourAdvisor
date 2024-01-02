@@ -26,10 +26,15 @@ class MainActivity : ComponentActivity() {
     private val searchHistoryViewModel: SearchHistoryViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        org.osmdroid.config.Configuration.getInstance().load(this, getSharedPreferences("OSM", MODE_PRIVATE))
+        org.osmdroid.config.Configuration.getInstance()
+            .load(this, getSharedPreferences("OSM", MODE_PRIVATE))
         setContent {
             TourAdvisorTheme {
-                MainScreen(locationViewModel = locationViewModel, firebaseViewModel = firebaseViewModel, searchHistoryViewModel = searchHistoryViewModel )
+                MainScreen(
+                    locationViewModel = locationViewModel,
+                    firebaseViewModel = firebaseViewModel,
+                    searchHistoryViewModel = searchHistoryViewModel
+                )
             }
         }
         verifyPermissions()
@@ -46,7 +51,7 @@ class MainActivity : ComponentActivity() {
         firebaseViewModel.stopObserver()
     }
 
-    private fun verifyPermissions() : Boolean{
+    private fun verifyPermissions(): Boolean {
         locationViewModel.coarseLocationPermission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.ACCESS_COARSE_LOCATION
@@ -72,8 +77,10 @@ class MainActivity : ComponentActivity() {
     private val basicPermissionsAuthorization = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        locationViewModel.coarseLocationPermission = results[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        locationViewModel.fineLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        locationViewModel.coarseLocationPermission =
+            results[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        locationViewModel.fineLocationPermission =
+            results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
         locationViewModel.startLocationUpdates()
     }
 

@@ -27,9 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import pt.isec.touradviser.R
 import pt.isec.touradvisor.data.POI
@@ -38,55 +38,84 @@ import pt.isec.touradvisor.ui.viewmodels.FirebaseViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    navController: NavController,
     firebaseViewModel: FirebaseViewModel
 ) {
     val pfp = firebaseViewModel.myPfp
     var openPoiCard by remember { mutableStateOf(false) }
     var selectedPOI: POI? by remember { mutableStateOf(null) }
-    val userName = firebaseViewModel.user.value?.name
-    Column(modifier = Modifier.background(color = Color(0xFF97CCEB))) {
-        Box(modifier = Modifier
-            .background(color = Color(0xFF97CCEB))
-        ){
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-            ){
-                Image(painter = painterResource(id = R.drawable.tour_advisor_banner), contentDescription = "PFP",
+    val nick = firebaseViewModel.getNickname()
+    Column(
+        modifier = Modifier
+            .background(color = colorResource(id = R.color.light_sky_blue))
+    ) {
+        Box(
+            modifier = Modifier
+                .background(color = colorResource(id = R.color.light_sky_blue))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.tour_advisor_banner),
+                    contentDescription = "PFP",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp)
-                        .background(color = Color(0xFF97CCEB)), contentScale = ContentScale.Crop)
-                Box(modifier = Modifier
-                    .width(100.dp)
-                    .height(100.dp)
-                    .align(alignment = Alignment.BottomCenter)
-                    .border(2.dp, Color.White, CircleShape)){
-                    if (pfp.value != ""){
-                        Image(painter = rememberImagePainter(data = pfp.value), contentDescription = "PFP",
+                        .background(color = colorResource(id = R.color.light_sky_blue)),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(100.dp)
+                        .align(alignment = Alignment.BottomCenter)
+                        .border(2.dp, Color.White, CircleShape)
+                ) {
+                    if (pfp.value != "") {
+                        Image(
+                            painter = rememberImagePainter(data = pfp.value),
+                            contentDescription = "PFP",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(CircleShape), contentScale = ContentScale.Crop)
-                    } else{
-                        Image(painter = rememberImagePainter(data = R.drawable.profile_pic), contentDescription = "PFP",
+                                .clip(CircleShape), contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = rememberImagePainter(data = R.drawable.profile_pic),
+                            contentDescription = "PFP",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(CircleShape), contentScale = ContentScale.Crop)
+                                .clip(CircleShape), contentScale = ContentScale.Crop
+                        )
                     }
                 }
             }
         }
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Color(0xFF97CCEB))
-        ){
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = colorResource(id = R.color.light_sky_blue))
+        ) {
             val pois = firebaseViewModel.myPOIs
             Column {
-                if (userName != null){
-                    Text(text = userName, fontSize = 30.sp)
-                } else{
-                    Text(text = "User", fontSize = 30.sp)
+                if (nick != null) {
+                    Text(
+                        text = nick,
+                        fontSize = 30.sp,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .align(alignment = Alignment.CenterHorizontally)
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.user),
+                        fontSize = 30.sp,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .align(alignment = Alignment.CenterHorizontally)
+                    )
                 }
                 LazyRow {
                     items(pois.value.size) { index ->
@@ -136,13 +165,14 @@ fun ProfileScreen(
                 }
             }
         }
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Color(0xFF97CCEB))
-        ){
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = colorResource(id = R.color.light_sky_blue))
+        ) {
             val pois = firebaseViewModel.sortedPOIs
-            LazyRow{
-                items(pois.value.size){ index ->
+            LazyRow {
+                items(pois.value.size) { index ->
                     val poi = pois.value[index]
                     Card(
                         modifier = Modifier
@@ -153,13 +183,32 @@ fun ProfileScreen(
                         Column {
                             poi.name?.let { Text(text = it, fontSize = 20.sp) }
                             poi.description?.let { Text(text = it, fontSize = 15.sp) }
-                            poi.category?.let { it.nome?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
-                            poi.location?.let { it.name?.let { it1 -> Text(text = it1, fontSize = 15.sp) } }
-                            poi.image?.let { Image(painter = painterResource(id = R.drawable.ic_launcher_background), contentDescription = "PFP",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .background(color = colorResource(id = R.color.white))) }
+                            poi.category?.let {
+                                it.nome?.let { it1 ->
+                                    Text(
+                                        text = it1,
+                                        fontSize = 15.sp
+                                    )
+                                }
+                            }
+                            poi.location?.let {
+                                it.name?.let { it1 ->
+                                    Text(
+                                        text = it1,
+                                        fontSize = 15.sp
+                                    )
+                                }
+                            }
+                            poi.image?.let {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                                    contentDescription = "PFP",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(150.dp)
+                                        .background(color = colorResource(id = R.color.white))
+                                )
+                            }
                         }
                     }
                 }
