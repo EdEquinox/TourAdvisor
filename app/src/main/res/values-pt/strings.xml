@@ -8,7 +8,7 @@
     <string name="welcome_to_tour_advisor">Ben-vindo ao Tour Advisor!</string>
     <string name="register">Registar</string>
     <string name="fechar">Fechar</string>
-    <string name="adicionar">Adicionar %1$s</string>
+    <string name="adicionar">Adicionar</string>
     <string name="cancelar">Cancelar</string>
     <string name="nome">Nome</string>
     <string name="descri_o">Descrição</string>
@@ -33,4 +33,6 @@
     <string name="nickname_novo">Nome novo</string>
     <string name="direitos">Todos os direitos reservados. Nenhuma parte desta aplicação pode ser reproduzida ou utilizada de qualquer forma ou por qualquer meio, electrónico ou mecânico, incluindo fotocópias, gravações ou qualquer sistema de armazenamento e recuperação de informação, sem a permissão por escrito do detentor dos direitos de autor.</string>
     <string name="versao">Versão 1.0</string>
+    <string name="my_pois">Meus Pontos de Interesse</string>
+    <string name="my_ratings">As minhas avaliações</string>
 </resources>

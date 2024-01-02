@@ -12,7 +12,7 @@
     <string name="login" translatable="false">Login</string>
     <string name="register">Register</string>
     <string name="fechar">Close</string>
-    <string name="adicionar">Add %1$s</string>
+    <string name="adicionar">Add</string>
     <string name="cancelar">Cancel</string>
     <string name="nome">Name</string>
     <string name="local_atual">Current location?</string>
@@ -44,4 +44,6 @@
     <string name="user" translatable="false">User</string>
     <string name="versao">Version 1.0</string>
     <string name="direitos">All rights reserved. No part of this application may be reproduced or used in any form or by any means, electronic or mechanical, including photocopying, recording, or any information storage and retrieval system, without written permission from the copyright holder.</string>
+    <string name="my_pois">My POIs</string>
+    <string name="my_ratings">My ratings</string>
 </resources>
