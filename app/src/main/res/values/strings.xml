@@ -36,10 +36,12 @@
     <string name="confirm">Confirm</string>
     <string name="email_novo">New email</string>
     <string name="nickname_novo">New nickname</string>
-    <string name="creditos" translatable="false">Aplicação desenvolvida por: \n\nJosé Marques - 2018019295\nAna Ferreira - 2017011822\nCarolina Rosa - 2017012933\n\n</string>
+    <string name="creditos" translatable="false">Aplicação desenvolvida por: \n\nJosé Marques - 2018019295\nAna Ferreira - 2017011822\nCarolina Rosa - 2017012933\n\nISEC\nAquiteturas Móveis\n2023/2024\nLEI\n</string>
     <string name="ok" translatable="false">OK</string>
     <string name="descri_o">Description</string>
     <string name="categoria">Category:</string>
     <string name="remover">Remove</string>
     <string name="user" translatable="false">User</string>
+    <string name="versao">Version 1.0</string>
+    <string name="direitos">All rights reserved. No part of this application may be reproduced or used in any form or by any means, electronic or mechanical, including photocopying, recording, or any information storage and retrieval system, without written permission from the copyright holder.</string>
 </resources>

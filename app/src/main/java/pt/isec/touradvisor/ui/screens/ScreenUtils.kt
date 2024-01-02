@@ -684,15 +684,16 @@ fun UploadPhotoButton(onUriReady: (String) -> Unit, type: String, picName: Strin
     val context = LocalContext.current
     val uri = remember { mutableStateOf("") }
     val launcher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { selectedUri: Uri? ->
-            selectedUri?.let {
-                context.contentResolver.openInputStream(it)?.let { inputStream ->
-                    FStorageUtil.uploadFile(inputStream, type, picName) { downloadUrl ->
-                        uri.value = downloadUrl
-                        onUriReady(downloadUrl)
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            selectedUri: Uri? ->
+                selectedUri?.let {
+                    context.contentResolver.openInputStream(it)?.let { inputStream ->
+                        FStorageUtil.uploadFile(inputStream, type, picName) { downloadUrl ->
+                            uri.value = downloadUrl
+                            onUriReady(downloadUrl)
+                        }
                     }
                 }
-            }
         }
 
     Button(onClick = { launcher.launch("image/*") }) {

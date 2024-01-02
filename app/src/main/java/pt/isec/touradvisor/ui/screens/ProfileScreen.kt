@@ -44,6 +44,12 @@ fun ProfileScreen(
     var openPoiCard by remember { mutableStateOf(false) }
     var selectedPOI: POI? by remember { mutableStateOf(null) }
     val nick = firebaseViewModel.getNickname()
+    var pois by remember {
+        mutableStateOf(firebaseViewModel.myPOIs.value)
+    }
+    val sortedPois by remember {
+        mutableStateOf(firebaseViewModel.sortedPOIs.value)
+    }
     Column(
         modifier = Modifier
             .background(color = colorResource(id = R.color.light_sky_blue))
@@ -98,7 +104,7 @@ fun ProfileScreen(
                 .fillMaxWidth()
                 .background(color = colorResource(id = R.color.light_sky_blue))
         ) {
-            val pois = firebaseViewModel.myPOIs
+
             Column {
                 if (nick != null) {
                     Text(
@@ -118,8 +124,8 @@ fun ProfileScreen(
                     )
                 }
                 LazyRow {
-                    items(pois.value.size) { index ->
-                        val poi = pois.value[index]
+                    items(pois.size) { index ->
+                        val poi = pois[index]
                         Card(
                             modifier = Modifier
                                 .padding(10.dp)
@@ -170,10 +176,9 @@ fun ProfileScreen(
                 .fillMaxWidth()
                 .background(color = colorResource(id = R.color.light_sky_blue))
         ) {
-            val pois = firebaseViewModel.sortedPOIs
             LazyRow {
-                items(pois.value.size) { index ->
-                    val poi = pois.value[index]
+                items(pois.size) { index ->
+                    val poi = sortedPois[index]
                     Card(
                         modifier = Modifier
                             .padding(10.dp)
@@ -218,7 +223,11 @@ fun ProfileScreen(
     if (openPoiCard) {
         ViewPOI(
             poi = selectedPOI,
-            onDismiss = { openPoiCard = false },
+            onDismiss =
+            {
+                openPoiCard = false
+                pois = pois.filter { it!=selectedPOI }
+            },
             onSelect = {
                 openPoiCard = false
             },

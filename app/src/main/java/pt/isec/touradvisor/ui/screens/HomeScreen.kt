@@ -75,8 +75,6 @@ fun HomeScreen(
     navController: NavController?,
     onLogout: () -> Unit
 ) {
-
-
     val location by locationViewModel.currentLocation.observeAsState()
     var geoPoint by remember {
         mutableStateOf(location?.let { GeoPoint(it.latitude, it.longitude) })

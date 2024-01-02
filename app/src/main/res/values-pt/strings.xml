@@ -31,4 +31,6 @@
     <string name="confirm">Confirmar</string>
     <string name="email_novo">Email novo</string>
     <string name="nickname_novo">Nome novo</string>
+    <string name="direitos">Todos os direitos reservados. Nenhuma parte desta aplicação pode ser reproduzida ou utilizada de qualquer forma ou por qualquer meio, electrónico ou mecânico, incluindo fotocópias, gravações ou qualquer sistema de armazenamento e recuperação de informação, sem a permissão por escrito do detentor dos direitos de autor.</string>
+    <string name="versao">Versão 1.0</string>
 </resources>

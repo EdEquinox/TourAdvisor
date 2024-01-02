@@ -327,6 +327,12 @@ fun InfoApp(
                 Row {
                     Text(text = stringResource(R.string.creditos))
                 }
+                Row {
+                    Text(text = stringResource(R.string.versao))
+                }
+                Row {
+                    Text(text = stringResource(R.string.direitos))
+                }
             }
         },
         confirmButton = {
