@@ -12,8 +12,4 @@ class TourAdviserApp : Application() {
         LocationManagerHandler(locationManager)
     }
 
-    override fun onCreate() {
-        super.onCreate()
-    }
-
 }

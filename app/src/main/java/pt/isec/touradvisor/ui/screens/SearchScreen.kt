@@ -165,7 +165,7 @@ fun SearchScreen(
                 onSelect = {
                     openLocalCard = false
                     selectedPOI = it
-                })
+                }, firebaseViewModel = firebaseViewModel)
         }
     }
     if (openCategoryCard) {
@@ -178,7 +178,7 @@ fun SearchScreen(
                     openCategoryCard = false
                     selectedPOI = it
                 },
-                categorias = categoriesList
+                categorias = categoriesList, firebaseViewModel = firebaseViewModel
             )
         }
     }

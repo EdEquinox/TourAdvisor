@@ -112,21 +112,14 @@ fun HomeScreen(
     var searchedCategories: List<Category>?
     val configuration = LocalConfiguration.current
     val portrait = remember { mutableIntStateOf(configuration.orientation) }
+    selectedLocal?.let {
+        mapCenter = GeoPoint(it.geoPoint?.latitude ?: 0.0, it.geoPoint?.longitude ?: 0.0)
+    }
 
     LaunchedEffect(key1 = user) {
         if (user == null) {
             onLogout()
         }
-        locationViewModel.startLocationUpdates()
-        locationViewModel.currentLocation.observeForever {
-            geoPoint = GeoPoint(it.latitude, it.longitude)
-            mapCenter = geoPoint
-        }
-    }
-    locationViewModel.startLocationUpdates()
-    locationViewModel.currentLocation.observeForever {
-        geoPoint = GeoPoint(it.latitude, it.longitude)
-        mapCenter = geoPoint
     }
 
     if (portrait.intValue == Configuration.ORIENTATION_LANDSCAPE) {
@@ -260,32 +253,31 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(8.dp)
                 )
-                selectedLocal?.let {
-                    MapViewComposable(
-                        mapCenter = mapCenter,
-                        poisList = poisList.value,
-                        selecedLocal = it
+                MapViewComposable(
+                    mapCenter = mapCenter,
+                    poisList = poisList.value,
+                    selecedLocal = selectedLocal
                     )
-                }
-                Row(
-                    modifier
-                        .zIndex(1f)
-                        .align(Alignment.BottomCenter),
-                ) {
-                    AddButton(
-                        firabaseViewModel = firebaseViewModel,
-                        categorias = categoriesList,
-                        locations = locationsList,
+                    Row(
+                        modifier
+                            .zIndex(1f)
+                            .align(Alignment.BottomCenter),
+                    ) {
+                        AddButton(
+                            firabaseViewModel = firebaseViewModel,
+                            categorias = categoriesList,
+                            locations = locationsList,
+                            locationViewModel = locationViewModel
+                        )
+                    }
+                    MyLocButton(
                         locationViewModel = locationViewModel
-                    )
-
+                    ) {
+                        geoPoint = it
+                        mapCenter = geoPoint
+                        selectedLocal?.geoPoint = geoPoint
+                    }
                 }
-                MyLocButton(
-                    locationViewModel = locationViewModel
-                ) {
-                    mapCenter = it
-                }
-            }
             Column {
                 TabFilter(categoriesList) {
                     selectedCategory = it
@@ -302,7 +294,7 @@ fun HomeScreen(
                             openPOIdialog = true
                             selectedPOI = it
                         },
-                        categorias = categoriesList
+                        categorias = categoriesList, firebaseViewModel = firebaseViewModel
                     )
                 }
                 Ordenacao(
@@ -506,13 +498,13 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(8.dp)
                 )
-                selectedLocal?.let {
-                    MapViewComposable(
-                        mapCenter = mapCenter,
-                        poisList = poisList.value,
-                        selecedLocal = it
-                    )
-                }
+
+                MapViewComposable(
+                    mapCenter = mapCenter,
+                    poisList = poisList.value,
+                    selecedLocal = selectedLocal
+                )
+
                 Row(
                     modifier
                         .zIndex(1f)
@@ -529,6 +521,10 @@ fun HomeScreen(
                     locationViewModel = locationViewModel
                 ) {
                     mapCenter = it
+                    geoPoint = location?.let { GeoPoint(it.latitude, it.longitude) } ?: GeoPoint(
+                        0.0,
+                        0.0
+                    )
                 }
             }
             TabFilter(categoriesList) {
@@ -546,7 +542,7 @@ fun HomeScreen(
                         openPOIdialog = true
                         selectedPOI = it
                     },
-                    categorias = categoriesList
+                    categorias = categoriesList, firebaseViewModel = firebaseViewModel
                 )
             }
             Ordenacao(
@@ -637,6 +633,7 @@ fun HomeScreen(
                     openPOIdialog = true
                     selectedPOI = it
                 }
+                , firebaseViewModel = firebaseViewModel
             )
         }
     }

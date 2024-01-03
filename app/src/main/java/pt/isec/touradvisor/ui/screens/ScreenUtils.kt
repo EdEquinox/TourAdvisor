@@ -87,7 +87,8 @@ fun ViewLocation(
     location: Local,
     onDismiss: () -> Unit,
     poisList: List<POI>,
-    onSelect: (POI) -> Unit
+    onSelect: (POI) -> Unit,
+    firebaseViewModel: FirebaseViewModel
 ) {
     AlertDialog(
         modifier = Modifier
@@ -123,12 +124,23 @@ fun ViewLocation(
                 }
             })
         },
-        confirmButton = {
+        dismissButton = {
             Button(onClick = {
                 onDismiss()
             }
             ) {
                 Text(text = stringResource(R.string.fechar))
+            }
+        },
+        confirmButton = {
+            if (location.user == firebaseViewModel.userUID.value) {
+                Button(onClick = {
+                    onDismiss()
+                    firebaseViewModel.removeLocationFromFirestore(location.name!!)
+                }
+                ) {
+                    Text(text = stringResource(R.string.remover))
+                }
             }
         },
     )
@@ -140,7 +152,8 @@ fun ViewFilter(
     categorias: MutableState<List<Category>>,
     category: String,
     onDismiss: () -> Unit,
-    onSelect: (POI) -> Unit
+    onSelect: (POI) -> Unit,
+    firebaseViewModel: FirebaseViewModel
 ) {
     var categoria by remember { mutableStateOf(Category()) }
     for (cat in categorias.value) {
@@ -175,9 +188,8 @@ fun ViewFilter(
                     }
                 })
             }
-
         },
-        confirmButton = {
+        dismissButton = {
             Button(onClick = {
                 onDismiss()
             }
@@ -185,12 +197,26 @@ fun ViewFilter(
                 Text(text = stringResource(R.string.fechar))
             }
         },
+        confirmButton = {
+            if (categoria.user == firebaseViewModel.userUID.value) {
+                Button(onClick = {
+                    onDismiss()
+                    firebaseViewModel.removeCategoryFromFirestore(category)
+                }
+                ) {
+                    Text(text = stringResource(R.string.remover))
+                }
+            }
+        }
     )
 }
 
-
 @Composable
-fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>, selecedLocal: Local) {
+fun MapViewComposable(
+    mapCenter: GeoPoint?,
+    poisList: List<POI>,
+    selecedLocal: Local?
+) {
     AndroidView(
         factory = { context ->
             MapView(context).apply {
@@ -217,7 +243,24 @@ fun MapViewComposable(mapCenter: GeoPoint?, poisList: List<POI>, selecedLocal: L
         }, update = { mapView ->
             mapView.overlays.clear()
             for (poi in poisList) {
-                if (poi.location?.name == selecedLocal.name) {
+                if (selecedLocal != null) {
+                    if (poi.location?.name == selecedLocal.name) {
+                        mapView.overlays.add(
+                            Marker(mapView).apply {
+                                position =
+                                    poi.geoPoint?.let {
+                                        org.osmdroid.util.GeoPoint(it.latitude, poi.geoPoint.longitude)
+                                    }
+                                title = poi.name
+                                setAnchor(
+                                    Marker.ANCHOR_CENTER,
+                                    Marker.ANCHOR_BOTTOM
+                                )
+                            }
+                        )
+                    }
+                }
+                else {
                     mapView.overlays.add(
                         Marker(mapView).apply {
                             position =
@@ -257,7 +300,10 @@ fun Ordenacao(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selected by remember { mutableIntStateOf(0) }
-    val text by remember { mutableStateOf(orderBy[selected]) }
+    val currentLocation by remember { mutableStateOf(locationViewModel.currentLocation.value?.let {
+        GeoPoint(
+            it.latitude, it.longitude)
+    }) }
 
     Box(
         modifier = Modifier
@@ -268,7 +314,7 @@ fun Ordenacao(
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
-            text = text.toString(), fontSize = 12.sp, modifier = Modifier
+            text = orderBy[selected].toString(), fontSize = 12.sp, modifier = Modifier
                 .clickable(onClick = { expanded = true })
                 .border(1.dp, Color.Gray, shape = RoundedCornerShape(10))
                 .padding(5.dp)
@@ -280,20 +326,24 @@ fun Ordenacao(
                     expanded = false
                     selected = index.key
                     when (index.key) {
-                        0 -> sortedLocal.value = localtionList.value.sortedByDescending {
-                            locationViewModel.calculateDistance(
-                                GeoPoint(0.0, 0.0), it.geoPoint ?: GeoPoint(0.0, 0.0)
-                            )
+                        2 -> sortedLocal.value = localtionList.value.sortedByDescending {
+                            currentLocation?.let { it1 ->
+                                locationViewModel.calculateDistance(
+                                    it1, it.geoPoint ?: GeoPoint(0.0, 0.0)
+                                )
+                            }
                         }
 
-                        1 -> sortedLocal.value = localtionList.value.sortedBy {
-                            locationViewModel.calculateDistance(
-                                GeoPoint(0.0, 0.0), it.geoPoint ?: GeoPoint(0.0, 0.0)
-                            )
+                        3 -> sortedLocal.value = localtionList.value.sortedBy {
+                            currentLocation?.let { it1 ->
+                                locationViewModel.calculateDistance(
+                                    it1, it.geoPoint ?: GeoPoint(0.0, 0.0)
+                                )
+                            }
                         }
 
-                        2 -> sortedLocal.value = localtionList.value.sortedBy { it.name }
-                        3 -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
+                        0 -> sortedLocal.value = localtionList.value.sortedBy { it.name }
+                        1 -> sortedLocal.value = localtionList.value.sortedByDescending { it.name }
                     }
                 }, text = { Text(index.value) })
             }
@@ -428,14 +478,14 @@ fun AddButton(
                 confirmButton = {
                     Button(onClick = {
                         if (tipo == "Localização") {
-                            if (data["nome"] == "" || data["descricao"] == "" || data["geopoint"] == "") {
+                            if (data["nome"] == "" || data["descricao"] == "" || data["geopoint"] == "" || data["imagem"] == "" || data["user"] == "") {
                                 Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             firabaseViewModel.addLocationToFirestore(data)
                         }
                         if (tipo == "Categoria") {
-                            if (data["nome"] == "" || data["descricao"] == "" || data["imagem"] == "") {
+                            if (data["nome"] == "" || data["descricao"] == "" || data["imagem"] == "" || data["user"] == "") {
                                 Toast.makeText(currentCont, fields, Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
@@ -624,7 +674,8 @@ fun dialogCategoria(): HashMap<String, Any> {
     return hashMapOf(
         "nome" to name,
         "descricao" to description,
-        "imagem" to image
+        "imagem" to image,
+        "user" to FirebaseViewModel().userUID.value!!
     )
 
 }
@@ -675,7 +726,8 @@ fun dialogLocalizacao(
         "nome" to name,
         "descricao" to descricao,
         "geopoint" to geoPoint,
-        "imagem" to image
+        "imagem" to image,
+        "user" to FirebaseViewModel().userUID.value!!
     )
 }
 

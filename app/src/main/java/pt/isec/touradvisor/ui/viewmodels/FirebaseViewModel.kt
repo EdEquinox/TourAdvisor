@@ -269,4 +269,20 @@ class FirebaseViewModel : ViewModel() {
             }
         }
     }
+
+    fun removeLocationFromFirestore(name: String) {
+        viewModelScope.launch {
+            FStorageUtil.removeLocationFromFirestore(name) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
+
+    fun removeCategoryFromFirestore(name: String) {
+        viewModelScope.launch {
+            FStorageUtil.removeCategoryFromFirestore(name) { exception ->
+                _error.value = exception?.message
+            }
+        }
+    }
 }

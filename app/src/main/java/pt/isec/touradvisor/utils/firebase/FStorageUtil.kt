@@ -55,7 +55,8 @@ class FStorageUtil {
                                 val name = it.getString("nome") ?: ""
                                 val description = it.getString("descricao") ?: ""
                                 val image = it.getString("imagem") ?: ""
-                                categories.add(Category(name, description, image))
+                                val user = it.getString("user") ?: ""
+                                categories.add(Category(name, description, image, user))
                             }
                         }
                     }
@@ -113,7 +114,8 @@ class FStorageUtil {
                                 val description = it.getString("descricao") ?: ""
                                 val geoPoint = it.getGeoPoint("geopoint")
                                 val image = it.getString("imagem") ?: ""
-                                locations.add(Local(name, description, image, geoPoint))
+                                val user = it.getString("user") ?: ""
+                                locations.add(Local(name, description, image, geoPoint, user))
                             }
                         }
                     }
@@ -321,6 +323,24 @@ class FStorageUtil {
 
             v.delete()
                 .addOnCompleteListener { onResult(it.exception) }
+        }
+
+        fun removeLocationFromFirestore(name: String, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            val v = db.collection("Localizacao").document(name)
+
+            v.delete()
+                .addOnCompleteListener { onResult(it.exception) }
+
+        }
+
+        fun removeCategoryFromFirestore(name: String, onResult: (Throwable?) -> Unit) {
+            val db = Firebase.firestore
+            val v = db.collection("Categorias").document(name)
+
+            v.delete()
+                .addOnCompleteListener { onResult(it.exception) }
+
         }
 
     }

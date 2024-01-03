@@ -58,6 +58,7 @@ fun ProfileScreen(
     }
     val configuration = LocalConfiguration.current
     val portrait = remember { mutableIntStateOf(configuration.orientation) }
+
     if (portrait.intValue == Configuration.ORIENTATION_PORTRAIT){
         Column(
             modifier = Modifier
