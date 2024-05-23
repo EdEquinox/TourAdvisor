@@ -16,7 +16,6 @@ TourAdvisor is a student project developed for a Kotlin module in a university c
 - Kotlin
 - Android Studio
 - Firebase (for authentication and database)
-- [Add any additional technologies used]
 
 ## Getting Started
 
